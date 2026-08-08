@@ -19,21 +19,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ORCUS_LEXER_H
 #define ORCUS_LEXER_H
 
-enum TokenType
+enum LexicalTokenType
 {
-    LITERAL = 0,
-    INTEGER,
-    FLOAT,
-    STRING,
+    IDENTIFIER = 0,
+    STATEMENT_DELIMITER,
     LEFT_PAREN,
-    RIGHT_PAREN
+    RIGHT_PAREN,
+    STRING,
+    BIN_OP,
+    NUMBER
 };
 
-typedef struct token_s
+typedef struct lexical_token_s
 {
-    enum TokenType Type;
+    enum LexicalTokenType Type;
     char* Content;
 }
-token_t;
+lexical_token_t;
+
+lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content);
 
 #endif // ORCUS_LEXER_H

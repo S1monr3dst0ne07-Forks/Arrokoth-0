@@ -16,5 +16,200 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+
 #include <orcus-0/lexer.h>
 #include <orcus-0/linked_list.h>
+
+static char IsWhitespaceChar(char CH)
+{
+    return (CH >= 9 && CH <= 13) || (CH == 32);
+}
+
+static char IsStartingIdentifierChar(char CH)
+{
+    return (CH >= 'a' && CH <= 'z') || (CH >= 'A' && CH <= 'Z') || (CH == '_');
+}
+
+static char IsIdentifierChar(char CH)
+{
+    return (CH >= 'a' && CH <= 'z') || (CH >= 'A' && CH <= 'Z') || (CH >= '0' && CH <= '9') || (CH == '_') || (CH == '\'');
+}
+
+static char IsStringDelimiterChar(char CH)
+{
+    return (CH == '\"') || (CH == '\'');
+}
+
+static char IsEMDASOperator(char CH)
+{
+    return (CH == '*') || (CH == '/') || (CH == '+') || (CH == '-') || (CH == '^');
+}
+
+static char IsGreaterOrSmallerOperator(char CH)
+{
+    return (CH == '>') || (CH == '<');
+}
+
+static char IsNumericalDigit(char CH)
+{
+    return (CH >= '0' && CH <= '9');
+}
+
+lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content)
+{
+    lexical_token_t* Token = (lexical_token_t*)malloc(sizeof(lexical_token_t));
+    Token->Type = Type;
+    Token->Content = Content;
+    return Token;
+}
+
+linked_list_node_t* DoLexicalAnalysis(const char* InputText)
+{
+    size_t CurrPos = 0;
+    size_t SavePos = 0;
+    linked_list_node_t* TokenList = NULL;
+
+    while (CurrPos < strlen(InputText))
+    {
+        if (IsWhitespaceChar(InputText[CurrPos]))
+        {
+            do
+            {
+                CurrPos++;
+            }
+            while (IsWhitespaceChar(InputText[CurrPos]));
+        }
+
+        if (IsStartingIdentifierChar(InputText[CurrPos]))
+        {
+            SavePos = CurrPos;
+            do
+            {
+                CurrPos++;
+            }
+            while (IsIdentifierChar(InputText[CurrPos]));
+            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
+            lexical_token_t* IdToken = NewToken(IDENTIFIER, Content);
+            TokenList = LinkedListAppend(TokenList, IdToken);
+        }
+
+        if (IsNumericalDigit(InputText[CurrPos]))
+        {
+            SavePos = CurrPos;
+            do
+            {
+                CurrPos++;
+            }
+            while (IsNumericalDigit(InputText[CurrPos]));
+            if (InputText[CurrPos] == '.')
+            {
+                do
+                {
+                    CurrPos++;
+                }
+                while (IsNumericalDigit(InputText[CurrPos]));
+            }
+            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
+            lexical_token_t* NumToken = NewToken(NUMBER, Content);
+            TokenList = LinkedListAppend(TokenList, NumToken);
+        }
+
+        if (InputText[CurrPos] == ';')
+        {
+            CurrPos++;
+            lexical_token_t* StmtEnderToken = NewToken(STATEMENT_DELIMITER, ";");
+            TokenList = LinkedListAppend(TokenList, StmtEnderToken);
+        }
+
+        if (InputText[CurrPos] == '(')
+        {
+            CurrPos++;
+            lexical_token_t* LeftParen = NewToken(LEFT_PAREN, "(");
+            TokenList = LinkedListAppend(TokenList, LeftParen);
+        }
+
+        if (InputText[CurrPos] == ')')
+        {
+            CurrPos++;
+            lexical_token_t* RightParen = NewToken(RIGHT_PAREN, ")");
+            TokenList = LinkedListAppend(TokenList, RightParen);
+        }
+
+        if (IsStringDelimiterChar(InputText[CurrPos]))
+        {
+            char Delim = InputText[CurrPos];
+            SavePos = CurrPos;
+            do
+            {
+                CurrPos++;
+            }
+            while (InputText[CurrPos] != Delim);
+            CurrPos++;
+            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
+            lexical_token_t* StrToken = NewToken(STRING, Content);
+            TokenList = LinkedListAppend(TokenList, StrToken);
+        }
+
+        if (IsEMDASOperator(InputText[CurrPos]))
+        {
+            char* Content = (char*)calloc(2, 1);
+            strncpy(Content, InputText + CurrPos, 1);
+            CurrPos++;
+            lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+            TokenList = LinkedListAppend(TokenList, OpToken);
+        }
+
+        if (InputText[CurrPos] == '=')
+        {
+            SavePos = CurrPos;
+            CurrPos++;
+            if (InputText[CurrPos] == '=')
+            {
+                CurrPos++;
+            }
+            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
+            lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+            TokenList = LinkedListAppend(TokenList, OpToken);
+        }
+
+        if (IsGreaterOrSmallerOperator(InputText[CurrPos]))
+        {
+            SavePos = CurrPos;
+            CurrPos++;
+            if (InputText[CurrPos] == '=')
+            {
+                CurrPos++;
+            }
+            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
+            lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+            TokenList = LinkedListAppend(TokenList, OpToken);
+        }
+
+        if (InputText[CurrPos] == '!')
+        {
+            SavePos = CurrPos;
+            CurrPos++;
+            if (InputText[CurrPos] == '=')
+            {
+                CurrPos++;
+                char* Content = (char*)calloc(CurrPos - SavePos, 1);
+                strncpy(Content, InputText + SavePos, CurrPos - SavePos);
+                lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+                TokenList = LinkedListAppend(TokenList, OpToken);
+            }
+            else
+            {
+                exit(-1); // TODO: Make it error out properly
+            }
+        }
+    }
+    return TokenList;
+}

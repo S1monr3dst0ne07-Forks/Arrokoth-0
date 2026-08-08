@@ -32,4 +32,4 @@ set(
 add_executable(orcus ${ORCUS_SRC})
 target_include_directories(orcus PRIVATE "${CMAKE_SOURCE_DIR}/include")
 target_compile_features(orcus PRIVATE c_std_17)
-target_compile_options(orcus PRIVATE -m64)
+target_compile_options(orcus PRIVATE -m64 -Wall -Wextra)

@@ -47,12 +47,17 @@ void LinkedListDestroy(linked_list_node_t* List)
 
 linked_list_node_t* LinkedListAppend(linked_list_node_t* List, void* Data)
 {
+    if (List == NULL)
+    {
+        return LinkedListCreate(Data);
+    }
     linked_list_node_t* DestNode = List;
     while (DestNode->Next != NULL)
     {
         DestNode = DestNode->Next;
     }
     DestNode->Next = MakeNew(Data);
+    return List;
 }
 
 linked_list_node_t* LinkedListPrepend(linked_list_node_t* List, void* Data)
