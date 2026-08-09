@@ -28,7 +28,7 @@ enum LexicalTokenType
     LEFT_PAREN,
     RIGHT_PAREN,
     STRING,
-    BIN_OP,
+    OPERATOR,
     NUMBER
 };
 

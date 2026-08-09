@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <orcus-0/lexer.h>
 #include <orcus-0/parser.h>
@@ -97,6 +98,29 @@ static char ExpectExactToken(enum LexicalTokenType Type, const char* Content)
     return 0;
 }
 
+static number_token_t* Number();
+static identifier_token_t* Identifier();
+static atom_token_t* Atom();
+static factor_token_t* Factor();
+static term_token_t* Term();
+static expression_token_t* Expression();
+static function_token_t* FunctionCall();
+static assignment_token_t* Assignment();
+static statement_token_t* Statement();
+
+static number_token_t* Number()
+{
+    number_token_t* Output = (number_token_t*)malloc(sizeof(number_token_t));
+
+    if (PeekToken()->Type == NUMBER)
+    {
+        Output->Val = strtod(PeekToken()->Content, NULL);
+        ConsumeToken();
+    }
+
+    return Output;
+}
+
 static identifier_token_t* Identifier()
 {
     identifier_token_t* Output = (identifier_token_t*)malloc(sizeof(identifier_token_t));
@@ -111,11 +135,119 @@ static identifier_token_t* Identifier()
     return Output;
 }
 
+static string_token_t* String()
+{
+    string_token_t* Output = (string_token_t*)malloc(sizeof(string_token_t));
+
+    if (PeekToken()->Type == IDENTIFIER)
+    {
+        Output->Text = (char*)calloc(strlen(PeekToken()->Content) + 1, 1);
+        strcpy(Output->Text, PeekToken()->Content);
+        ConsumeToken();
+    }
+
+    return Output;
+}
+
+static atom_token_t* Atom()
+{
+    atom_token_t* Output = (atom_token_t*)malloc(sizeof(atom_token_t));
+
+    if (PeekToken()->Type == IDENTIFIER)
+    {
+        Output->Child.Type = IDENTIFIER_TOKEN;
+        Output->Child.Data = Identifier();
+    }
+    else if (PeekToken()->Type == NUMBER)
+    {
+        Output->Child.Type = NUMBER_TOKEN;
+        Output->Child.Data = Number();
+    }
+    else if (PeekToken()->Type == STRING)
+    {
+        Output->Child.Type = STRING_TOKEN;
+        Output->Child.Data = String();
+    }
+    else if (ExpectToken(LEFT_PAREN))
+    {
+        Output->Child.Type = EXPRESSION;
+        Output->Child.Data = Expression();
+        ExpectToken(RIGHT_PAREN);
+    }
+
+    return Output;
+}
+
+static factor_token_t* Factor()
+{
+    factor_token_t* Output = (factor_token_t*)malloc(sizeof(factor_token_t));
+    token_wrapper_t ParentTree;
+
+    ParentTree.Type = ATOM;
+    ParentTree.Data = Atom();
+
+    while (AcceptExactToken(OPERATOR, "^"))
+    {
+        bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
+        BinOp->R = ParentTree;
+        BinOp->L.Type = ATOM;
+        BinOp->L.Data = Atom();
+        ParentTree.Type = BIN_OP;
+        ParentTree.Data = BinOp;
+    }
+
+    return Output;
+}
+
+static term_token_t* Term()
+{
+    term_token_t* Output = (term_token_t*)malloc(sizeof(term_token_t));
+    token_wrapper_t ParentTree;
+
+    ParentTree.Type = FACTOR;
+    ParentTree.Data = Factor();
+
+    while (AcceptExactToken(OPERATOR, "*") || AcceptExactToken(OPERATOR, "/"))
+    {
+        bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
+        BinOp->L = ParentTree;
+        BinOp->R.Type = FACTOR;
+        BinOp->R.Data = Factor();
+        ParentTree.Type = BIN_OP;
+        ParentTree.Data = BinOp;
+    }
+
+    return Output;
+}
+
 static expression_token_t* Expression()
 {
     expression_token_t* Output = (expression_token_t*)malloc(sizeof(expression_token_t));
+    token_wrapper_t ParentTree;
 
-    // TODO
+    if (AcceptExactToken(OPERATOR, "-"))
+    {
+        unary_minus_token_t* UnOp = (unary_minus_token_t*)malloc(sizeof(unary_minus_token_t));
+        UnOp->Child.Type = TERM;
+        UnOp->Child.Data = Term();
+        ParentTree.Type = UNARY_MINUS;
+        ParentTree.Data = UnOp;
+    }
+    else
+    {
+        ParentTree.Type = TERM;
+        ParentTree.Data = Term();
+    }
+
+    while (AcceptExactToken(OPERATOR, "+") || AcceptExactToken(OPERATOR, "-"))
+    {
+        bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
+        BinOp->L = ParentTree;
+        BinOp->R.Type = TERM;
+        BinOp->R.Data = Term();
+        ParentTree.Type = BIN_OP;
+        ParentTree.Data = BinOp;
+    }
 
     return Output;
 }
@@ -124,7 +256,7 @@ static function_token_t* FunctionCall()
 {
     function_token_t* Output = (function_token_t*)malloc(sizeof(function_token_t));
     Output->FuncName.Data = Identifier();
-    Output->FuncName.Type = IDENTIFIER;
+    Output->FuncName.Type = IDENTIFIER_TOKEN;
     return Output;
 }
 
@@ -132,9 +264,10 @@ static assignment_token_t* Assignment()
 {
     assignment_token_t* Output = (assignment_token_t*)malloc(sizeof(assignment_token_t));
 
+    ExpectExactToken(IDENTIFIER, "var");
     Output->Name.Data = Identifier();
-    Output->Name.Type = IDENTIFIER;
-    ExpectExactToken(BIN_OP, "=");
+    Output->Name.Type = IDENTIFIER_TOKEN;
+    ExpectExactToken(OPERATOR, "=");
     Output->Val.Data = Expression();
     Output->Val.Type = EXPRESSION;
 
@@ -159,7 +292,6 @@ static statement_token_t* Statement()
             Output->Child.Type = ASSIGNMENT_TOKEN;
         }
     }
-
     return Output;
 }
 
@@ -179,7 +311,7 @@ program_token_t* DoParseAST(linked_list_node_t* LexTokens)
             TokenVectorAppend(&Prog->Statements, TW);
             ExpectToken(STATEMENT_DELIMITER);
         }
-        while (AcceptExactToken(IDENTIFIER, "end"));
+        while (!AcceptExactToken(IDENTIFIER, "end"));
     }
 
     TokenList = NULL;

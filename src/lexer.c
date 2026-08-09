@@ -162,7 +162,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             char* Content = (char*)calloc(2, 1);
             strncpy(Content, InputText + CurrPos, 1);
             CurrPos++;
-            lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+            lexical_token_t* OpToken = NewToken(OPERATOR, Content);
             TokenList = LinkedListAppend(TokenList, OpToken);
         }
 
@@ -176,7 +176,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             }
             char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+            lexical_token_t* OpToken = NewToken(OPERATOR, Content);
             TokenList = LinkedListAppend(TokenList, OpToken);
         }
 
@@ -190,7 +190,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             }
             char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+            lexical_token_t* OpToken = NewToken(OPERATOR, Content);
             TokenList = LinkedListAppend(TokenList, OpToken);
         }
 
@@ -203,7 +203,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
                 CurrPos++;
                 char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
                 strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-                lexical_token_t* OpToken = NewToken(BIN_OP, Content);
+                lexical_token_t* OpToken = NewToken(OPERATOR, Content);
                 TokenList = LinkedListAppend(TokenList, OpToken);
             }
             else

@@ -11,7 +11,7 @@ program = "program" statement ";" {statement ";"} "end" ;
 
 statement = assignment | function_call ;
 
-assignment = identifier "=" expression ;
+assignment = "var" identifier "=" expression ;
 
 function_call = "run" identifier ;
 
@@ -21,5 +21,5 @@ term = factor {("*"|"/") factor} ;
 
 factor = atom {"^" atom} ;
 
-atom = identifier | number | "(" expression ")"
+atom = identifier | string | number | "(" expression ")"
 ```

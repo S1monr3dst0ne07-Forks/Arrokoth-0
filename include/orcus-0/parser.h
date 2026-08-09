@@ -31,7 +31,13 @@ enum ParserTokenType
     FUNCTION_TOKEN,
     EXPRESSION,
     UNARY_MINUS,
-    BIN_OP
+    BIN_OP,
+    TERM,
+    FACTOR,
+    ATOM,
+    IDENTIFIER_TOKEN,
+    NUMBER_TOKEN,
+    STRING_TOKEN
 };
 
 typedef struct token_wrapper_s
@@ -61,6 +67,11 @@ struct identifier_token_s;
 struct expression_token_s;
 struct unary_minus_token_s;
 struct bin_op_token_s;
+struct term_token_s;
+struct factor_token_s;
+struct atom_token_s;
+struct number_token_s;
+struct string_token_s;
 
 typedef struct program_token_s
 {
@@ -111,6 +122,36 @@ typedef struct bin_op_token_s
     token_wrapper_t R;
 }
 bin_op_token_t;
+
+typedef struct term_token_s
+{
+    token_wrapper_t Child;
+}
+term_token_t;
+
+typedef struct factor_token_s
+{
+    token_wrapper_t Child;
+}
+factor_token_t;
+
+typedef struct atom_token_s
+{
+    token_wrapper_t Child;
+}
+atom_token_t;
+
+typedef struct number_token_s
+{
+    double Val;
+}
+number_token_t;
+
+typedef struct string_token_s
+{
+    char* Text;
+}
+string_token_t;
 
 program_token_t* DoParseAST(linked_list_node_t* LexTokens);
 
