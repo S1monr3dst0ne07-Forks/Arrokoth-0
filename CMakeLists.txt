@@ -1,4 +1,4 @@
-# Orcus-0 - A simple, basic programming language.
+# Arrokoth-0 - A simple, basic programming language.
 # Copyright (C) 2026  NorbCodes
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,20 +17,20 @@
 cmake_minimum_required(VERSION 4.0.0 FATAL_ERROR)
 
 project(
-    "Orcus-0"
+    "Arrokoth-0"
     VERSION 0.0.0
     DESCRIPTION "A simple, basic programming language as a learning project."
     LANGUAGES C
 )
 
 set(
-    ORCUS_SRC
+    ARROKOTH_SRC
     ${CMAKE_SOURCE_DIR}/src/lexer.c
     ${CMAKE_SOURCE_DIR}/src/linked_list.c
     ${CMAKE_SOURCE_DIR}/src/parser.c
 )
 
-add_executable(orcus ${ORCUS_SRC})
-target_include_directories(orcus PRIVATE "${CMAKE_SOURCE_DIR}/include")
-target_compile_features(orcus PRIVATE c_std_17)
-target_compile_options(orcus PRIVATE -m64 -Wall -Wextra -g3 -ggdb3)
+add_executable(arrokoth ${ARROKOTH_SRC})
+target_include_directories(arrokoth PRIVATE "${CMAKE_SOURCE_DIR}/include")
+target_compile_features(arrokoth PRIVATE c_std_17)
+target_compile_options(arrokoth PRIVATE -m64 -Wall -Wextra -g3 -ggdb3)

@@ -1,5 +1,5 @@
 /*
-Orcus-0 - A simple, basic programming language.
+Arrokoth-0 - A simple, basic programming language.
 Copyright (C) 2026  NorbCodes
 
 This program is free software: you can redistribute it and/or modify
@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef ORCUS_LINKED_LIST_H
-#define ORCUS_LINKED_LIST_H
+#ifndef ARROKOTH_LINKED_LIST_H
+#define ARROKOTH_LINKED_LIST_H
 
 #include <stdint.h>
 
@@ -36,4 +36,4 @@ linked_list_node_t* LinkedListPrepend(linked_list_node_t* List, void* Data);
 void LinkedListRemove(linked_list_node_t* List, size_t Indx);
 linked_list_node_t* LinkedListGet(linked_list_node_t* List, size_t Indx);
 
-#endif // ORCUS_LINKED_LIST_H
+#endif // ARROKOTH_LINKED_LIST_H

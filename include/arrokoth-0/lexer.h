@@ -1,5 +1,5 @@
 /*
-Orcus-0 - A simple, basic programming language.
+Arrokoth-0 - A simple, basic programming language.
 Copyright (C) 2026  NorbCodes
 
 This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef ORCUS_LEXER_H
-#define ORCUS_LEXER_H
+#ifndef ARROKOTH_LEXER_H
+#define ARROKOTH_LEXER_H
 
-#include <orcus-0/linked_list.h>
+#include <arrokoth-0/linked_list.h>
 
 enum LexicalTokenType
 {
@@ -42,4 +42,4 @@ lexical_token_t;
 lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content);
 linked_list_node_t* DoLexicalAnalysis(const char* InputText);
 
-#endif // ORCUS_LEXER_H
+#endif // ARROKOTH_LEXER_H

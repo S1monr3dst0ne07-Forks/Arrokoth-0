@@ -1,5 +1,5 @@
 /*
-Orcus-0 - A simple, basic programming language.
+Arrokoth-0 - A simple, basic programming language.
 Copyright (C) 2026  NorbCodes
 
 This program is free software: you can redistribute it and/or modify
@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdint.h>
 
-#include <orcus-0/lexer.h>
-#include <orcus-0/linked_list.h>
+#include <arrokoth-0/lexer.h>
+#include <arrokoth-0/linked_list.h>
 
 static char IsWhitespaceChar(char CH)
 {

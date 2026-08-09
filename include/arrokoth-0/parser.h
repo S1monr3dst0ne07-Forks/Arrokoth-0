@@ -1,5 +1,5 @@
 /*
-Orcus-0 - A simple, basic programming language.
+Arrokoth-0 - A simple, basic programming language.
 Copyright (C) 2026  NorbCodes
 
 This program is free software: you can redistribute it and/or modify
@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef ORCUS_PARSER_H
-#define ORCUS_PARSER_H
+#ifndef ARROKOTH_PARSER_H
+#define ARROKOTH_PARSER_H
 
 #include <stdint.h>
 
-#include <orcus-0/linked_list.h>
+#include <arrokoth-0/linked_list.h>
 
 enum ParserTokenType
 {
@@ -155,4 +155,4 @@ string_token_t;
 
 program_token_t* DoParseAST(linked_list_node_t* LexTokens);
 
-#endif // ORCUS_PARSER_H
+#endif // ARROKOTH_PARSER_H
