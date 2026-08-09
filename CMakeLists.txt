@@ -27,9 +27,10 @@ set(
     ORCUS_SRC
     ${CMAKE_SOURCE_DIR}/src/lexer.c
     ${CMAKE_SOURCE_DIR}/src/linked_list.c
+    ${CMAKE_SOURCE_DIR}/src/parser.c
 )
 
 add_executable(orcus ${ORCUS_SRC})
 target_include_directories(orcus PRIVATE "${CMAKE_SOURCE_DIR}/include")
 target_compile_features(orcus PRIVATE c_std_17)
-target_compile_options(orcus PRIVATE -m64 -Wall -Wextra)
+target_compile_options(orcus PRIVATE -m64 -Wall -Wextra -g3 -ggdb3)

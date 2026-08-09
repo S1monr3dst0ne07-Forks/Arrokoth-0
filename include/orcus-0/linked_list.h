@@ -29,7 +29,8 @@ typedef struct linked_list_node_s
 linked_list_node_t;
 
 linked_list_node_t* LinkedListCreate(void* Data);
-void LinkedListDestroy(linked_list_node_t* List);
+void LinkedListDestroyAt(linked_list_node_t* List);
+void LinkedListDestroySingular(linked_list_node_t* Node);
 linked_list_node_t* LinkedListAppend(linked_list_node_t* List, void* Data);
 linked_list_node_t* LinkedListPrepend(linked_list_node_t* List, void* Data);
 void LinkedListRemove(linked_list_node_t* List, size_t Indx);

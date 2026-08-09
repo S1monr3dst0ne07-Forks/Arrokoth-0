@@ -33,16 +33,24 @@ linked_list_node_t* LinkedListCreate(void* Data)
     return MakeNew(Data);
 }
 
-void LinkedListDestroy(linked_list_node_t* List)
+void LinkedListDestroyAt(linked_list_node_t* List)
 {
     linked_list_node_t* CurrNode = List;
     while (CurrNode->Next != NULL)
     {
         linked_list_node_t* ToDelete = CurrNode;
         CurrNode = CurrNode->Next;
+        free(ToDelete->Data);
         free(ToDelete);
     }
+    free(CurrNode->Data);
     free(CurrNode);
+}
+
+void LinkedListDestroySingular(linked_list_node_t* Node)
+{
+    free(Node->Data);
+    free(Node);
 }
 
 linked_list_node_t* LinkedListAppend(linked_list_node_t* List, void* Data)
@@ -77,6 +85,7 @@ void LinkedListRemove(linked_list_node_t* List, size_t Indx)
         CurrNode = CurrNode->Next;
     }
     PrevNode->Next = CurrNode->Next;
+    free(CurrNode->Data);
     free(CurrNode);
 }
 

@@ -61,6 +61,7 @@ static char IsNumericalDigit(char CH)
 lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content)
 {
     lexical_token_t* Token = (lexical_token_t*)malloc(sizeof(lexical_token_t));
+    memset(Token, 0, sizeof(lexical_token_t));
     Token->Type = Type;
     Token->Content = Content;
     return Token;
@@ -91,7 +92,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
                 CurrPos++;
             }
             while (IsIdentifierChar(InputText[CurrPos]));
-            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
             lexical_token_t* IdToken = NewToken(IDENTIFIER, Content);
             TokenList = LinkedListAppend(TokenList, IdToken);
@@ -113,7 +114,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
                 }
                 while (IsNumericalDigit(InputText[CurrPos]));
             }
-            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
             lexical_token_t* NumToken = NewToken(NUMBER, Content);
             TokenList = LinkedListAppend(TokenList, NumToken);
@@ -150,7 +151,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             }
             while (InputText[CurrPos] != Delim);
             CurrPos++;
-            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
             lexical_token_t* StrToken = NewToken(STRING, Content);
             TokenList = LinkedListAppend(TokenList, StrToken);
@@ -173,7 +174,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             {
                 CurrPos++;
             }
-            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
             lexical_token_t* OpToken = NewToken(BIN_OP, Content);
             TokenList = LinkedListAppend(TokenList, OpToken);
@@ -187,7 +188,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             {
                 CurrPos++;
             }
-            char* Content = (char*)calloc(CurrPos - SavePos, 1);
+            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
             lexical_token_t* OpToken = NewToken(BIN_OP, Content);
             TokenList = LinkedListAppend(TokenList, OpToken);
@@ -200,7 +201,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             if (InputText[CurrPos] == '=')
             {
                 CurrPos++;
-                char* Content = (char*)calloc(CurrPos - SavePos, 1);
+                char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
                 strncpy(Content, InputText + SavePos, CurrPos - SavePos);
                 lexical_token_t* OpToken = NewToken(BIN_OP, Content);
                 TokenList = LinkedListAppend(TokenList, OpToken);

@@ -19,6 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ORCUS_LEXER_H
 #define ORCUS_LEXER_H
 
+#include <orcus-0/linked_list.h>
+
 enum LexicalTokenType
 {
     IDENTIFIER = 0,
@@ -38,5 +40,6 @@ typedef struct lexical_token_s
 lexical_token_t;
 
 lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content);
+linked_list_node_t* DoLexicalAnalysis(const char* InputText);
 
 #endif // ORCUS_LEXER_H
