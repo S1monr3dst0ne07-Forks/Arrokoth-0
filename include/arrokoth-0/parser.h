@@ -40,6 +40,15 @@ enum ParserTokenType
     STRING_TOKEN
 };
 
+enum BinOpType
+{
+    PLUS = 0,
+    MINUS,
+    MULT,
+    DIV,
+    EXP
+};
+
 typedef struct token_wrapper_s
 {
     enum ParserTokenType Type;
@@ -118,6 +127,7 @@ unary_minus_token_t;
 
 typedef struct bin_op_token_s
 {
+    enum BinOpType Operator;
     token_wrapper_t L;
     token_wrapper_t R;
 }

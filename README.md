@@ -23,3 +23,22 @@ factor = atom {"^" atom} ;
 
 atom = identifier | string | number | "(" expression ")"
 ```
+
+## Compiler stages
+
+### Lexer
+
+The program is broken up into lexical tokens, as defined in `lexer.c`, to be later parsed into the Abstract Syntax Tree.
+
+### Parser
+
+A recursive descent parser goes token by token, assembling the tree. This tree, however, is not perfect as it contains
+residual `Expression`, `Term`, `Factor`, `Atom` tokens.
+
+### Tree transform
+
+Gets rid of `Expression`, `Term`, `Factor`, `Atom` and `Statement` tokens, while also enforcing rules such as a BinOp token can only have kids of type `Number`, `String` or `BinOp` and other rules. This is done to make code generation a bit smoother.
+
+### Code generation
+
+And the last stage, walking down the AST and emitting an LLVM IR file. This file is then compiled using `llc` (LLVM static compiler) and linked using `lld` (LLVM linker).

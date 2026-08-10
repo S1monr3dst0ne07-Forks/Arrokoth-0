@@ -37,8 +37,21 @@ void TokenVectorAppend(token_vector_t* TV, token_wrapper_t TokenWrapper)
     if (TV->CurrSize == TV->MaxSize)
     {
         TV->MaxSize *= 2;
-        TV->List = (token_wrapper_t*)realloc(TV->List, TV->MaxSize);
+        token_wrapper_t* NewList = (token_wrapper_t*)calloc(TV->MaxSize, sizeof(token_wrapper_t));
+        memset(NewList, 0, TV->MaxSize);
+        memcpy(NewList, TV->List, TV->CurrSize * sizeof(token_wrapper_t));
+        free(TV->List);
+        TV->List = NewList;
     }
+}
+
+static void BinOpSetOperator(bin_op_token_t* BinOp, char* Content)
+{
+    BinOp->Operator = (!strcmp(Content, "+")) ? PLUS : BinOp->Operator;
+    BinOp->Operator = (!strcmp(Content, "-")) ? MINUS : BinOp->Operator;
+    BinOp->Operator = (!strcmp(Content, "*")) ? MULT : BinOp->Operator;
+    BinOp->Operator = (!strcmp(Content, "/")) ? DIV : BinOp->Operator;
+    BinOp->Operator = (!strcmp(Content, "^")) ? EXP : BinOp->Operator;
 }
 
 // Global var, fight me
@@ -59,16 +72,6 @@ static lexical_token_t* PeekToken()
 static char AcceptExactToken(enum LexicalTokenType Type, const char* Content)
 {
     if (PeekToken()->Type == Type && (!strcmp(PeekToken()->Content, Content)))
-    {
-        ConsumeToken();
-        return 1;
-    }
-    return 0;
-}
-
-static char AcceptToken(enum LexicalTokenType Type)
-{
-    if (PeekToken()->Type == Type)
     {
         ConsumeToken();
         return 1;
@@ -192,10 +195,12 @@ static factor_token_t* Factor()
         BinOp->R = ParentTree;
         BinOp->L.Type = ATOM;
         BinOp->L.Data = Atom();
+        BinOp->Operator = EXP;
         ParentTree.Type = BIN_OP;
         ParentTree.Data = BinOp;
     }
 
+    Output->Child = ParentTree;
     return Output;
 }
 
@@ -207,16 +212,21 @@ static term_token_t* Term()
     ParentTree.Type = FACTOR;
     ParentTree.Data = Factor();
 
+    char* Op;
+    Op = PeekToken()->Content;
     while (AcceptExactToken(OPERATOR, "*") || AcceptExactToken(OPERATOR, "/"))
     {
         bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
         BinOp->L = ParentTree;
         BinOp->R.Type = FACTOR;
         BinOp->R.Data = Factor();
+        BinOpSetOperator(BinOp, Op);
         ParentTree.Type = BIN_OP;
         ParentTree.Data = BinOp;
+        Op = PeekToken()->Content;
     }
 
+    Output->Child = ParentTree;
     return Output;
 }
 
@@ -239,16 +249,21 @@ static expression_token_t* Expression()
         ParentTree.Data = Term();
     }
 
+    char* Op;
+    Op = PeekToken()->Content;
     while (AcceptExactToken(OPERATOR, "+") || AcceptExactToken(OPERATOR, "-"))
     {
         bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
         BinOp->L = ParentTree;
         BinOp->R.Type = TERM;
         BinOp->R.Data = Term();
+        BinOpSetOperator(BinOp, Op);
         ParentTree.Type = BIN_OP;
         ParentTree.Data = BinOp;
+        Op = PeekToken()->Content;
     }
 
+    Output->Child = ParentTree;
     return Output;
 }
 
