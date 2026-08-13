@@ -29,7 +29,10 @@ enum LexicalTokenType
     RIGHT_PAREN,
     STRING,
     OPERATOR,
-    NUMBER
+    NUMBER,
+    COMMA,
+    LEFT_BRACKET,
+    RIGHT_BRACKET
 };
 
 typedef struct lexical_token_s

@@ -38,11 +38,6 @@ static char IsIdentifierChar(char CH)
     return (CH >= 'a' && CH <= 'z') || (CH >= 'A' && CH <= 'Z') || (CH >= '0' && CH <= '9') || (CH == '_') || (CH == '\'');
 }
 
-static char IsStringDelimiterChar(char CH)
-{
-    return (CH == '\"') || (CH == '\'');
-}
-
 static char IsEMDASOperator(char CH)
 {
     return (CH == '*') || (CH == '/') || (CH == '+') || (CH == '-') || (CH == '^');
@@ -141,22 +136,6 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             TokenList = LinkedListAppend(TokenList, RightParen);
         }
 
-        if (IsStringDelimiterChar(InputText[CurrPos]))
-        {
-            char Delim = InputText[CurrPos];
-            SavePos = CurrPos;
-            do
-            {
-                CurrPos++;
-            }
-            while (InputText[CurrPos] != Delim);
-            CurrPos++;
-            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
-            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* StrToken = NewToken(STRING, Content);
-            TokenList = LinkedListAppend(TokenList, StrToken);
-        }
-
         if (IsEMDASOperator(InputText[CurrPos]))
         {
             char* Content = (char*)calloc(2, 1);
@@ -210,6 +189,27 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             {
                 exit(-1); // TODO: Make it error out properly
             }
+        }
+
+        if (InputText[CurrPos] == ',')
+        {
+            CurrPos++;
+            lexical_token_t* CommaToken = NewToken(COMMA, ",");
+            TokenList = LinkedListAppend(TokenList, CommaToken);
+        }
+
+        if (InputText[CurrPos] == '{')
+        {
+            CurrPos++;
+            lexical_token_t* LeftBracket = NewToken(LEFT_BRACKET, "{");
+            TokenList = LinkedListAppend(TokenList, LeftBracket);
+        }
+
+        if (InputText[CurrPos] == '}')
+        {
+            CurrPos++;
+            lexical_token_t* RightBracket = NewToken(RIGHT_BRACKET, "}");
+            TokenList = LinkedListAppend(TokenList, RightBracket);
         }
     }
     return TokenList;

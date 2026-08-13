@@ -7,11 +7,17 @@
 In EBNF grammar form, the **Arrokoth-0** language can be defined as:
 
 ```ebnf
-program = "program" statement ";" {statement ";"} "end" ;
+program = "program" block {block} "end" ;
+
+block = var_creation | proc_creation ;
+
+var_creation = "var" identifier {, identifier} ";" ;
+
+proc_creation = "proc" identifier "{" statement ";" {statement ";"} "}" ;
 
 statement = assignment | function_call ;
 
-assignment = "var" identifier "=" expression ;
+assignment = identifier "=" expression ;
 
 function_call = "run" identifier ;
 
@@ -21,7 +27,7 @@ term = factor {("*"|"/") factor} ;
 
 factor = atom {"^" atom} ;
 
-atom = identifier | string | number | "(" expression ")"
+atom = identifier | number | "(" expression ")"
 ```
 
 ## Compiler stages
@@ -32,13 +38,17 @@ The program is broken up into lexical tokens, as defined in `lexer.c`, to be lat
 
 ### Parser
 
-A recursive descent parser goes token by token, assembling the tree. This tree, however, is not perfect as it contains
-residual `Expression`, `Term`, `Factor`, `Atom` tokens.
+A recursive descent parser goes token by token, assembling the AST. This tree, however, is not perfect as it contains
+residual `Block`, `Statement`, `Expression`, `Term`, `Factor`, `Atom` tokens.
 
 ### Tree transform
 
-Gets rid of `Expression`, `Term`, `Factor`, `Atom` and `Statement` tokens, while also enforcing rules such as a BinOp token can only have kids of type `Number`, `String` or `BinOp` and other rules. This is done to make code generation a bit smoother.
+Gets rid of `Block`, `Expression`, `Term`, `Factor`, `Atom` and `Statement` tokens. This is done to make code generation a bit smoother.
+
+### Semantic analysis
+
+The tree is walked once to check existence of variables before their usage, existence of procedures before they are called, checks for math errors, checks if the `main` function exists and etc. Basically validates the program.
 
 ### Code generation
 
-And the last stage, walking down the AST and emitting an LLVM IR file. This file is then compiled using `llc` (LLVM static compiler) and linked using `lld` (LLVM linker).
+And the last stage, walking down the AST and emitting an LLVM IR file. It's then up to you to pass it through an optimizer, compile into object file and link.

@@ -37,7 +37,10 @@ enum ParserTokenType
     ATOM,
     IDENTIFIER_TOKEN,
     NUMBER_TOKEN,
-    STRING_TOKEN
+    STRING_TOKEN,
+    BLOCK_TOKEN,
+    VAR_CREATION,
+    PROC_CREATION
 };
 
 enum BinOpType
@@ -81,10 +84,13 @@ struct factor_token_s;
 struct atom_token_s;
 struct number_token_s;
 struct string_token_s;
+struct block_token_s;
+struct var_creation_token_s;
+struct proc_creation_token_s;
 
 typedef struct program_token_s
 {
-    token_vector_t Statements;
+    token_vector_t Blocks;
 }
 program_token_t;
 
@@ -162,6 +168,25 @@ typedef struct string_token_s
     char* Text;
 }
 string_token_t;
+
+typedef struct block_token_s
+{
+    token_wrapper_t Child;
+}
+block_token_t;
+
+typedef struct var_creation_token_s
+{
+    token_vector_t Children;
+}
+var_creation_token_t;
+
+typedef struct proc_creation_token_s
+{
+    token_wrapper_t Name;
+    token_vector_t Statements;
+}
+proc_creation_token_t;
 
 program_token_t* DoParseAST(linked_list_node_t* LexTokens);
 

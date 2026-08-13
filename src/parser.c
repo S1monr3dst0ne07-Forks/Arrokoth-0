@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/parser.h>
@@ -69,6 +68,16 @@ static lexical_token_t* PeekToken()
     return ((lexical_token_t*)TokenList->Data);
 }
 
+static char AcceptToken(enum LexicalTokenType Type)
+{
+    if (PeekToken()->Type == Type)
+    {
+        ConsumeToken();
+        return 1;
+    }
+    return 0;
+}
+
 static char AcceptExactToken(enum LexicalTokenType Type, const char* Content)
 {
     if (PeekToken()->Type == Type && (!strcmp(PeekToken()->Content, Content)))
@@ -110,6 +119,9 @@ static expression_token_t* Expression();
 static function_token_t* FunctionCall();
 static assignment_token_t* Assignment();
 static statement_token_t* Statement();
+static proc_creation_token_t* ProcCreation();
+static var_creation_token_t* VarCreation();
+static block_token_t* Block();
 
 static number_token_t* Number()
 {
@@ -138,20 +150,6 @@ static identifier_token_t* Identifier()
     return Output;
 }
 
-static string_token_t* String()
-{
-    string_token_t* Output = (string_token_t*)malloc(sizeof(string_token_t));
-
-    if (PeekToken()->Type == IDENTIFIER)
-    {
-        Output->Text = (char*)calloc(strlen(PeekToken()->Content) + 1, 1);
-        strcpy(Output->Text, PeekToken()->Content);
-        ConsumeToken();
-    }
-
-    return Output;
-}
-
 static atom_token_t* Atom()
 {
     atom_token_t* Output = (atom_token_t*)malloc(sizeof(atom_token_t));
@@ -165,11 +163,6 @@ static atom_token_t* Atom()
     {
         Output->Child.Type = NUMBER_TOKEN;
         Output->Child.Data = Number();
-    }
-    else if (PeekToken()->Type == STRING)
-    {
-        Output->Child.Type = STRING_TOKEN;
-        Output->Child.Data = String();
     }
     else if (ExpectToken(LEFT_PAREN))
     {
@@ -270,8 +263,10 @@ static expression_token_t* Expression()
 static function_token_t* FunctionCall()
 {
     function_token_t* Output = (function_token_t*)malloc(sizeof(function_token_t));
+
     Output->FuncName.Data = Identifier();
     Output->FuncName.Type = IDENTIFIER_TOKEN;
+
     return Output;
 }
 
@@ -279,7 +274,6 @@ static assignment_token_t* Assignment()
 {
     assignment_token_t* Output = (assignment_token_t*)malloc(sizeof(assignment_token_t));
 
-    ExpectExactToken(IDENTIFIER, "var");
     Output->Name.Data = Identifier();
     Output->Name.Type = IDENTIFIER_TOKEN;
     ExpectExactToken(OPERATOR, "=");
@@ -293,20 +287,76 @@ static statement_token_t* Statement()
 {
     statement_token_t* Output = (statement_token_t*)malloc(sizeof(statement_token_t));
 
-    if (PeekToken()->Type == IDENTIFIER)
+    if (AcceptExactToken(IDENTIFIER, "run"))
     {
-        if ( !strcmp(PeekToken()->Content, "run") )
-        {
-            ConsumeToken();
-            Output->Child.Data = FunctionCall();
-            Output->Child.Type = FUNCTION_TOKEN;
-        }
-        else
-        {
-            Output->Child.Data = Assignment();
-            Output->Child.Type = ASSIGNMENT_TOKEN;
-        }
+        ConsumeToken();
+        Output->Child.Data = FunctionCall();
+        Output->Child.Type = FUNCTION_TOKEN;
     }
+    else if (AcceptToken(IDENTIFIER))
+    {
+        Output->Child.Data = Assignment();
+        Output->Child.Type = ASSIGNMENT_TOKEN;
+    }
+
+    return Output;
+}
+
+static proc_creation_token_t* ProcCreation()
+{
+    proc_creation_token_t* Output = (proc_creation_token_t*)malloc(sizeof(proc_creation_token_t));
+    TokenVectorInit(&Output->Statements);
+
+    Output->Name.Type = IDENTIFIER_TOKEN;
+    Output->Name.Data = Identifier();
+
+    ExpectToken(LEFT_BRACKET);
+    do
+    {
+        token_wrapper_t TW;
+        TW.Type = STATEMENT_TOKEN;
+        TW.Data = Statement();
+        TokenVectorAppend(&Output->Statements, TW);
+        ExpectToken(STATEMENT_DELIMITER);
+    }
+    while (!AcceptToken(RIGHT_BRACKET));
+
+    return Output;
+}
+
+static var_creation_token_t* VarCreation()
+{
+    var_creation_token_t* Output = (var_creation_token_t*)malloc(sizeof(var_creation_token_t));
+    TokenVectorInit(&Output->Children);
+
+    do
+    {
+        token_wrapper_t TW;
+        TW.Type = IDENTIFIER_TOKEN;
+        TW.Data = Identifier();
+        TokenVectorAppend(&Output->Children, TW);
+    }
+    while (AcceptToken(COMMA));
+    ExpectToken(STATEMENT_DELIMITER);
+
+    return Output;
+}
+
+static block_token_t* Block()
+{
+    block_token_t* Output = (block_token_t*)malloc(sizeof(block_token_t));
+
+    if (AcceptExactToken(IDENTIFIER, "var"))
+    {
+        Output->Child.Type = VAR_CREATION;
+        Output->Child.Data = VarCreation();
+    }
+    else if (ExpectExactToken(IDENTIFIER, "proc"))
+    {
+        Output->Child.Type = PROC_CREATION;
+        Output->Child.Data = ProcCreation();
+    }
+
     return Output;
 }
 
@@ -314,17 +364,16 @@ program_token_t* DoParseAST(linked_list_node_t* LexTokens)
 {
     TokenList = LexTokens;
     program_token_t* Prog = (program_token_t*)malloc(sizeof(program_token_t));
-    TokenVectorInit(&Prog->Statements);
+    TokenVectorInit(&Prog->Blocks);
 
-    if (AcceptExactToken(IDENTIFIER, "program"))
+    if (ExpectExactToken(IDENTIFIER, "program"))
     {
         do
         {
             token_wrapper_t TW;
-            TW.Type = STATEMENT_TOKEN;
-            TW.Data = Statement();
-            TokenVectorAppend(&Prog->Statements, TW);
-            ExpectToken(STATEMENT_DELIMITER);
+            TW.Type = BLOCK_TOKEN;
+            TW.Data = Block();
+            TokenVectorAppend(&Prog->Blocks, TW);
         }
         while (!AcceptExactToken(IDENTIFIER, "end"));
     }

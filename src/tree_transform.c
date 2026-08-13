@@ -37,6 +37,7 @@ static crawl_result_t CrawlUnaryOp(unary_minus_token_t* UnOp);
 static crawl_result_t CrawlExpression(expression_token_t* Expr);
 static crawl_result_t CrawlAssignment(assignment_token_t* Assign);
 static crawl_result_t CrawlStatement(statement_token_t* Stmt);
+static crawl_result_t CrawlBlock(block_token_t* Block);
 
 static crawl_result_t DispatchCall(void* Data, enum ParserTokenType Type)
 {
@@ -149,12 +150,46 @@ static crawl_result_t CrawlStatement(statement_token_t* Stmt)
     return Res;
 }
 
+static crawl_result_t CrawlProcCreation(proc_creation_token_t* ProcCreation)
+{
+    crawl_result_t Res;
+    Res.NewData = ProcCreation;
+    Res.NewType = PROC_CREATION;
+
+    for (size_t N = 0; N < ProcCreation->Statements.CurrSize; N++)
+    {
+        crawl_result_t Res = CrawlStatement(((statement_token_t*)ProcCreation->Statements.List[N].Data));
+        ProcCreation->Statements.List[N].Data = Res.NewData;
+        ProcCreation->Statements.List[N].Type = Res.NewType;
+    }
+
+    return Res;
+}
+
+static crawl_result_t CrawlBlock(block_token_t* Block)
+{
+    crawl_result_t Res;
+
+    if (Block->Child.Type == VAR_CREATION)
+    {
+        Res.NewType = Block->Child.Type;
+        Res.NewData = Block->Child.Data;
+    }
+    else if (Block->Child.Type == PROC_CREATION)
+    {
+        Res = CrawlProcCreation((proc_creation_token_t*)Block->Child.Data);
+    }
+
+    free(Block);
+    return Res;
+}
+
 void DoTreeTransform(program_token_t* AST)
 {
-    for (size_t N = 0; N < AST->Statements.CurrSize; N++)
+    for (size_t N = 0; N < AST->Blocks.CurrSize; N++)
     {
-        crawl_result_t Res = CrawlStatement(((statement_token_t*)AST->Statements.List[N].Data));
-        AST->Statements.List[N].Data = Res.NewData;
-        AST->Statements.List[N].Type = Res.NewType;
+        crawl_result_t Res = CrawlBlock(((block_token_t*)AST->Blocks.List[N].Data));
+        AST->Blocks.List[N].Data = Res.NewData;
+        AST->Blocks.List[N].Type = Res.NewType;
     }
 }
