@@ -36,7 +36,9 @@ static crawl_result_t CrawlBinOp(bin_op_token_t* BinOp);
 static crawl_result_t CrawlUnaryOp(unary_minus_token_t* UnOp);
 static crawl_result_t CrawlExpression(expression_token_t* Expr);
 static crawl_result_t CrawlAssignment(assignment_token_t* Assign);
+static crawl_result_t CrawlWhileLoop(while_loop_token_t* WhileLoop);
 static crawl_result_t CrawlStatement(statement_token_t* Stmt);
+static crawl_result_t CrawlProcCreation(proc_creation_token_t* ProcCreation);
 static crawl_result_t CrawlBlock(block_token_t* Block);
 
 static crawl_result_t DispatchCall(void* Data, enum ParserTokenType Type)
@@ -132,6 +134,30 @@ static crawl_result_t CrawlAssignment(assignment_token_t* Assign)
     return Res;
 }
 
+static crawl_result_t CrawlWhileLoop(while_loop_token_t* WhileLoop)
+{
+    crawl_result_t Res;
+    Res.NewData = WhileLoop;
+    Res.NewType = WHILE_LOOP;
+
+    crawl_result_t LRes = DispatchCall(WhileLoop->L.Data, WhileLoop->L.Type);
+    WhileLoop->L.Data = LRes.NewData;
+    WhileLoop->L.Type = LRes.NewType;
+
+    crawl_result_t RRes = DispatchCall(WhileLoop->R.Data, WhileLoop->R.Type);
+    WhileLoop->R.Data = RRes.NewData;
+    WhileLoop->R.Type = RRes.NewType;
+
+    for (size_t N = 0; N < WhileLoop->Statements.CurrSize; N++)
+    {
+        crawl_result_t Res = CrawlStatement((statement_token_t*)WhileLoop->Statements.List[N].Data);
+        WhileLoop->Statements.List[N].Data = Res.NewData;
+        WhileLoop->Statements.List[N].Type = Res.NewType;
+    }
+
+    return Res;
+}
+
 static crawl_result_t CrawlStatement(statement_token_t* Stmt)
 {
     crawl_result_t Res;
@@ -144,6 +170,10 @@ static crawl_result_t CrawlStatement(statement_token_t* Stmt)
     {
         Res.NewData = Stmt->Child.Data;
         Res.NewType = FUNCTION_TOKEN;
+    }
+    else if (Stmt->Child.Type == WHILE_LOOP)
+    {
+        Res = CrawlWhileLoop((while_loop_token_t*)Stmt->Child.Data);
     }
 
     free(Stmt);
@@ -158,7 +188,7 @@ static crawl_result_t CrawlProcCreation(proc_creation_token_t* ProcCreation)
 
     for (size_t N = 0; N < ProcCreation->Statements.CurrSize; N++)
     {
-        crawl_result_t Res = CrawlStatement(((statement_token_t*)ProcCreation->Statements.List[N].Data));
+        crawl_result_t Res = CrawlStatement((statement_token_t*)ProcCreation->Statements.List[N].Data);
         ProcCreation->Statements.List[N].Data = Res.NewData;
         ProcCreation->Statements.List[N].Type = Res.NewType;
     }

@@ -15,11 +15,17 @@ var_creation = "var" identifier {, identifier} ";" ;
 
 proc_creation = "proc" identifier "{" statement ";" {statement ";"} "}" ;
 
-statement = assignment | function_call ;
+statement = assignment | function_call | while_loop ;
+
+while_loop = "while" condition "{" statement ";" {statement ";"} "}" ;
 
 assignment = identifier "=" expression ;
 
 function_call = "run" identifier ;
+
+cond_op = ("=="|"!="|">"|"<"|"<="|">=") ;
+
+condition = expression cond_op expression ;
 
 expression = ["-"] term {("+"|"-") term} ;
 

@@ -53,6 +53,18 @@ static void BinOpSetOperator(bin_op_token_t* BinOp, char* Content)
     BinOp->Operator = (!strcmp(Content, "^")) ? EXP : BinOp->Operator;
 }
 
+static enum CompBinOpType GetCondOpType(char* Content)
+{
+    enum CompBinOpType Res = EQUAL;
+    Res = (!strcmp(Content, "==")) ? EQUAL : Res;
+    Res = (!strcmp(Content, "!=")) ? NOT_EQUAL : Res;
+    Res = (!strcmp(Content, ">")) ? GREATER : Res;
+    Res = (!strcmp(Content, "<")) ? LESSER : Res;
+    Res = (!strcmp(Content, ">=")) ? GREATER_OR_EQ : Res;
+    Res = (!strcmp(Content, "<=")) ? LESSER_OR_EQ : Res;
+    return Res;
+}
+
 // Global var, fight me
 linked_list_node_t* TokenList = NULL;
 
@@ -283,15 +295,47 @@ static assignment_token_t* Assignment()
     return Output;
 }
 
+static while_loop_token_t* WhileLoop()
+{
+    while_loop_token_t* Output = (while_loop_token_t*)malloc(sizeof(while_loop_token_t));
+    TokenVectorInit(&Output->Statements);
+
+    Output->L.Type = EXPRESSION;
+    Output->L.Data = Expression();
+
+    Output->OpType = GetCondOpType(PeekToken()->Content);
+    ExpectToken(OPERATOR);
+
+    Output->R.Type = EXPRESSION;
+    Output->R.Data = Expression();
+
+    ExpectToken(LEFT_BRACKET);
+    do
+    {
+        token_wrapper_t TW;
+        TW.Type = STATEMENT_TOKEN;
+        TW.Data = Statement();
+        TokenVectorAppend(&Output->Statements, TW);
+        ExpectToken(STATEMENT_DELIMITER);
+    }
+    while (!AcceptToken(RIGHT_BRACKET));
+
+    return Output;
+}
+
 static statement_token_t* Statement()
 {
     statement_token_t* Output = (statement_token_t*)malloc(sizeof(statement_token_t));
 
     if (AcceptExactToken(IDENTIFIER, "run"))
     {
-        ConsumeToken();
         Output->Child.Data = FunctionCall();
         Output->Child.Type = FUNCTION_TOKEN;
+    }
+    else if (AcceptExactToken(IDENTIFIER, "while"))
+    {
+        Output->Child.Data = WhileLoop();
+        Output->Child.Type = WHILE_LOOP;
     }
     else if (AcceptToken(IDENTIFIER))
     {
