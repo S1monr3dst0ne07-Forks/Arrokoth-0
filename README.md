@@ -27,7 +27,7 @@ term = factor {("*"|"/") factor} ;
 
 factor = atom {"^" atom} ;
 
-atom = identifier | number | "(" expression ")"
+atom = identifier | number | "(" expression ")" ;
 ```
 
 ## Compiler stages
