@@ -130,6 +130,8 @@ static term_token_t* Term();
 static expression_token_t* Expression();
 static function_token_t* FunctionCall();
 static assignment_token_t* Assignment();
+static while_loop_token_t* WhileLoop();
+static if_branch_token_t* IfBranch();
 static statement_token_t* Statement();
 static proc_creation_token_t* ProcCreation();
 static var_creation_token_t* VarCreation();
@@ -323,6 +325,34 @@ static while_loop_token_t* WhileLoop()
     return Output;
 }
 
+static if_branch_token_t* IfBranch()
+{
+    if_branch_token_t* Output = (if_branch_token_t*)malloc(sizeof(if_branch_token_t));
+    TokenVectorInit(&Output->Statements);
+
+    Output->L.Type = EXPRESSION;
+    Output->L.Data = Expression();
+
+    Output->OpType = GetCondOpType(PeekToken()->Content);
+    ExpectToken(OPERATOR);
+
+    Output->R.Type = EXPRESSION;
+    Output->R.Data = Expression();
+
+    ExpectToken(LEFT_BRACKET);
+    do
+    {
+        token_wrapper_t TW;
+        TW.Type = STATEMENT_TOKEN;
+        TW.Data = Statement();
+        TokenVectorAppend(&Output->Statements, TW);
+        ExpectToken(STATEMENT_DELIMITER);
+    }
+    while (!AcceptToken(RIGHT_BRACKET));
+
+    return Output;
+}
+
 static statement_token_t* Statement()
 {
     statement_token_t* Output = (statement_token_t*)malloc(sizeof(statement_token_t));
@@ -336,6 +366,11 @@ static statement_token_t* Statement()
     {
         Output->Child.Data = WhileLoop();
         Output->Child.Type = WHILE_LOOP;
+    }
+    else if (AcceptExactToken(IDENTIFIER, "if"))
+    {
+        Output->Child.Data = IfBranch();
+        Output->Child.Type = IF_BRANCH;
     }
     else if (AcceptToken(IDENTIFIER))
     {

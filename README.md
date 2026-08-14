@@ -15,7 +15,9 @@ var_creation = "var" identifier {, identifier} ";" ;
 
 proc_creation = "proc" identifier "{" statement ";" {statement ";"} "}" ;
 
-statement = assignment | function_call | while_loop ;
+statement = assignment | function_call | while_loop | if_branch ;
+
+if_branch = "if" condition "{" statement ";" {statement ";"} "}" ;
 
 while_loop = "while" condition "{" statement ";" {statement ";"} "}" ;
 
