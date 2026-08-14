@@ -68,6 +68,17 @@ linked_list_node_t* LinkedListAppend(linked_list_node_t* List, void* Data)
     return List;
 }
 
+linked_list_node_t* LinkedListAppendDirectly(linked_list_node_t* List, linked_list_node_t* Node)
+{
+    linked_list_node_t* DestNode = List;
+    while (DestNode->Next != NULL)
+    {
+        DestNode = DestNode->Next;
+    }
+    DestNode->Next = Node;
+    return List;
+}
+
 linked_list_node_t* LinkedListPrepend(linked_list_node_t* List, void* Data)
 {
     linked_list_node_t* NewSrc = MakeNew(Data);
