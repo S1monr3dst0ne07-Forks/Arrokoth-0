@@ -1,6 +1,6 @@
 # Arrokoth-0
 
-**Arrokoth-0**, name inspired by the trans-Neptunian object **[Arrokoth](https://en.wikipedia.org/wiki/486958_Arrokoth)** and inspired by the **PL/0**, is a very basic and simple programming language, created as a learning project about creating parsers, generating ASTs and writing a compiler. Arrokoth-0 generates an **LLVM IR** object that can be then compiled into a binary for any CPU architecture you desire.
+**Arrokoth-0**, name inspired by the trans-Neptunian object **[Arrokoth](https://en.wikipedia.org/wiki/486958_Arrokoth)** and inspired by the **[PL/0](https://en.wikipedia.org/wiki/PL/0)** programming language, is a very basic and simple programming language, created as a learning project about creating parsers, generating ASTs and writing a compiler. Arrokoth-0 generates **LLVM IR** code that can be then compiled into a binary for every CPU architecture that LLVM supports.
 
 ## Grammar
 
