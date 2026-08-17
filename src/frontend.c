@@ -25,9 +25,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/parser.h>
 #include <arrokoth-0/tree_transform.h>
+#include <arrokoth-0/ast_graph.h>
 
 #define I_ARG_HASH 5861499
 #define O_ARG_HASH 5861505
+#define A_ARG_HASH 5861491
+#define NTTA_ARG_HASH 210644999497
 
 compiler_flags_t CompilerFlags;
 
@@ -83,6 +86,32 @@ static void OutputArg(char** Argv, size_t Pos)
     CompilerFlags.OutputFile = Argv[Pos + 1];
 }
 
+static void AstArg()
+{
+    if (CompilerFlags.GenerateAstGraph)
+    {
+        fputs("error: '-a' or '-ntta' are already set", stderr);
+        exit(-1);
+    }
+    CompilerFlags.GenerateAstGraph = 1;
+}
+
+static void NttAstArg()
+{
+    if (CompilerFlags.GenerateAstGraph)
+    {
+        fputs("error: '-a' or '-ntta' are already set", stderr);
+        exit(-1);
+    }
+    if (CompilerFlags.GenerateAstGraphNTT)
+    {
+        fputs("error: '-ntta' is already set", stderr);
+        exit(-1);
+    }
+    CompilerFlags.GenerateAstGraph = 1;
+    CompilerFlags.GenerateAstGraphNTT = 1;
+}
+
 int main(int argc, char** argv)
 {
     ZeroFlags(&CompilerFlags);
@@ -96,6 +125,12 @@ int main(int argc, char** argv)
                 break;
             case O_ARG_HASH:
                 OutputArg(argv, N);
+                break;
+            case A_ARG_HASH:
+                AstArg();
+                break;
+            case NTTA_ARG_HASH:
+                NttAstArg();
                 break;
         }
     }
@@ -124,6 +159,18 @@ int main(int argc, char** argv)
         {
             Tokens = DoLexicalAnalysis(Line);
         }
+    }
+
+    program_token_t* AST = DoParseAST(Tokens);
+
+    if (CompilerFlags.GenerateAstGraph)
+    {
+        if (!CompilerFlags.GenerateAstGraphNTT)
+        {
+            DoTreeTransform(AST);
+        }
+        GenerateAstGraph(AST);
+        return 0;
     }
 
     return 0;

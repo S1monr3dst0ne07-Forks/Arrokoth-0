@@ -37,7 +37,6 @@ enum ParserTokenType
     ATOM,
     IDENTIFIER_TOKEN,
     NUMBER_TOKEN,
-    STRING_TOKEN,
     BLOCK_TOKEN,
     VAR_CREATION,
     PROC_CREATION,
@@ -176,12 +175,6 @@ typedef struct number_token_s
     double Val;
 }
 number_token_t;
-
-typedef struct string_token_s
-{
-    char* Text;
-}
-string_token_t;
 
 typedef struct block_token_s
 {

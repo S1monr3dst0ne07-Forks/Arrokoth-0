@@ -36,6 +36,7 @@ static crawl_result_t CrawlBinOp(bin_op_token_t* BinOp);
 static crawl_result_t CrawlUnaryOp(unary_minus_token_t* UnOp);
 static crawl_result_t CrawlExpression(expression_token_t* Expr);
 static crawl_result_t CrawlAssignment(assignment_token_t* Assign);
+static crawl_result_t CrawlIfBranch(if_branch_token_t* IfBranch);
 static crawl_result_t CrawlWhileLoop(while_loop_token_t* WhileLoop);
 static crawl_result_t CrawlStatement(statement_token_t* Stmt);
 static crawl_result_t CrawlProcCreation(proc_creation_token_t* ProcCreation);
@@ -134,6 +135,30 @@ static crawl_result_t CrawlAssignment(assignment_token_t* Assign)
     return Res;
 }
 
+static crawl_result_t CrawlIfBranch(if_branch_token_t* IfBranch)
+{
+    crawl_result_t Res;
+    Res.NewData = IfBranch;
+    Res.NewType = IF_BRANCH;
+
+    crawl_result_t LRes = DispatchCall(IfBranch->L.Data, IfBranch->L.Type);
+    IfBranch->L.Data = LRes.NewData;
+    IfBranch->L.Type = LRes.NewType;
+
+    crawl_result_t RRes = DispatchCall(IfBranch->R.Data, IfBranch->R.Type);
+    IfBranch->R.Data = RRes.NewData;
+    IfBranch->R.Type = RRes.NewType;
+
+    for (size_t N = 0; N < IfBranch->Statements.CurrSize; N++)
+    {
+        crawl_result_t Res = CrawlStatement((statement_token_t*)IfBranch->Statements.List[N].Data);
+        IfBranch->Statements.List[N].Data = Res.NewData;
+        IfBranch->Statements.List[N].Type = Res.NewType;
+    }
+
+    return Res;
+}
+
 static crawl_result_t CrawlWhileLoop(while_loop_token_t* WhileLoop)
 {
     crawl_result_t Res;
@@ -174,6 +199,10 @@ static crawl_result_t CrawlStatement(statement_token_t* Stmt)
     else if (Stmt->Child.Type == WHILE_LOOP)
     {
         Res = CrawlWhileLoop((while_loop_token_t*)Stmt->Child.Data);
+    }
+    else if (Stmt->Child.Type == IF_BRANCH)
+    {
+        Res = CrawlIfBranch((if_branch_token_t*)Stmt->Child.Data);
     }
 
     free(Stmt);

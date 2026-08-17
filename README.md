@@ -60,3 +60,12 @@ The tree is walked once to check existence of variables before their usage, exis
 ### Code generation
 
 And the last stage, walking down the AST and emitting an LLVM IR file. It's then up to you to pass it through an optimizer, compile into object file and link.
+
+## Compiler args
+
+| Commandline Argument | Type | Description |
+| -------------------- | ---- | ----------- |
+| `-i` | string | Input file to process. |
+| `-o` | string | Output file. |
+| `-a` | bool | Generate a GraphViz script (`.dot`) that can be used to visualize the AST. |
+| `-ntta` | bool | Same as `-a` except the Tree Transform stage is skipped. |

@@ -25,6 +25,7 @@ project(
 
 set(
     ARROKOTH_SRC
+    ${CMAKE_SOURCE_DIR}/src/ast_graph.c
     ${CMAKE_SOURCE_DIR}/src/frontend.c
     ${CMAKE_SOURCE_DIR}/src/lexer.c
     ${CMAKE_SOURCE_DIR}/src/linked_list.c

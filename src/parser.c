@@ -288,8 +288,8 @@ static assignment_token_t* Assignment()
 {
     assignment_token_t* Output = (assignment_token_t*)malloc(sizeof(assignment_token_t));
 
-    Output->Name.Data = Identifier();
     Output->Name.Type = IDENTIFIER_TOKEN;
+    Output->Name.Data = Identifier();
     ExpectExactToken(OPERATOR, "=");
     Output->Val.Data = Expression();
     Output->Val.Type = EXPRESSION;
@@ -372,7 +372,7 @@ static statement_token_t* Statement()
         Output->Child.Data = IfBranch();
         Output->Child.Type = IF_BRANCH;
     }
-    else if (AcceptToken(IDENTIFIER))
+    else if (PeekToken()->Type == IDENTIFIER)
     {
         Output->Child.Data = Assignment();
         Output->Child.Type = ASSIGNMENT_TOKEN;

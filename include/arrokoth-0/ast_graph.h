@@ -16,32 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef ARROKOTH_LEXER_H
-#define ARROKOTH_LEXER_H
+#ifndef ARROKOTH_AST_GRAPH_H
+#define ARROKOTH_AST_GRAPH_H
 
-#include <arrokoth-0/linked_list.h>
+#include <arrokoth-0/parser.h>
 
-enum LexicalTokenType
-{
-    IDENTIFIER = 0,
-    STATEMENT_DELIMITER,
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    OPERATOR,
-    NUMBER,
-    COMMA,
-    LEFT_BRACKET,
-    RIGHT_BRACKET
-};
+void GenerateAstGraph(program_token_t* AST);
 
-typedef struct lexical_token_s
-{
-    enum LexicalTokenType Type;
-    char* Content;
-}
-lexical_token_t;
-
-lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content);
-linked_list_node_t* DoLexicalAnalysis(const char* InputText);
-
-#endif // ARROKOTH_LEXER_H
+#endif // ARROKOTH_AST_GRAPH_H

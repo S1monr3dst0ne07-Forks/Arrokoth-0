@@ -19,10 +19,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ARROKOTH_FRONTEND_H
 #define ARROKOTH_FRONTEND_H
 
+#include <stdint.h>
+
 typedef struct compiler_flags_s
 {
     char* InputFile;
     char* OutputFile;
+    uint8_t GenerateAstGraph;
+    uint8_t GenerateAstGraphNTT;
 }
 compiler_flags_t;
 
