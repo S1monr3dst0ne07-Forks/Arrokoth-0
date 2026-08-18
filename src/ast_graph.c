@@ -33,6 +33,7 @@ static char* CrawlTerm(term_token_t* Term);
 static char* CrawlExpression(expression_token_t* Expr);
 static char* CrawlBinOp(bin_op_token_t* BinOp);
 static char* CrawlUnaryMinus(unary_minus_token_t* UM);
+static char* CrawlPrintVar(print_token_t* PrintV);
 static char* CrawlFunction(function_token_t* Func);
 static char* CrawlAssignment(assignment_token_t* Assign);
 static char* CrawlWhileLoop(while_loop_token_t* While);
@@ -64,6 +65,8 @@ static char* DispatchCall(token_wrapper_t TV)
             return CrawlAssignment((assignment_token_t*)TV.Data);
         case FUNCTION_TOKEN:
             return CrawlFunction((function_token_t*)TV.Data);
+        case PRINT_VAR:
+            return CrawlPrintVar((print_token_t*)TV.Data);
         case UNARY_MINUS:
             return CrawlUnaryMinus((unary_minus_token_t*)TV.Data);
         case BIN_OP:
@@ -193,6 +196,23 @@ static char* CrawlUnaryMinus(unary_minus_token_t* UM)
     fprintf(OutputFile, "%s -> %s\n", UMName, ConnectTo);
 
     return UMName;
+}
+
+static char* CrawlPrintVar(print_token_t* PrintV)
+{
+    static size_t PrintNum = 0;
+    char* PrintName = (char*)malloc(64);
+    snprintf(PrintName, 64, "Print%lld", PrintNum);
+    fprintf(OutputFile, "%s [label=\"Print variables\",fillcolor=darkorange1,style=filled,fontcolor=black]\n", PrintName);
+    PrintNum++;
+
+    for (size_t N = 0; N < PrintV->Ids.CurrSize; N++)
+    {
+        char* ConnectTo = DispatchCall(PrintV->Ids.List[N]);
+        fprintf(OutputFile, "%s -> %s\n", PrintName, ConnectTo);
+    }
+
+    return PrintName;
 }
 
 static char* CrawlFunction(function_token_t* Func)

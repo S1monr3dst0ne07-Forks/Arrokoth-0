@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/linked_list.h>
@@ -136,6 +137,13 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             TokenList = LinkedListAppend(TokenList, RightParen);
         }
 
+        if (InputText[CurrPos] == '#')
+        {
+            CurrPos++;
+            lexical_token_t* Hash = NewToken(PRINT, "#");
+            TokenList = LinkedListAppend(TokenList, Hash);
+        }
+
         if (IsEMDASOperator(InputText[CurrPos]))
         {
             char* Content = (char*)calloc(2, 1);
@@ -187,7 +195,8 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             }
             else
             {
-                exit(-1); // TODO: Make it error out properly
+                fprintf(stderr, "[LEXER] error: expected '=' after '!' to form '!=' (NOT EQUAL) operator, got %c instead\n", InputText[CurrPos]);
+                exit(-1);
             }
         }
 

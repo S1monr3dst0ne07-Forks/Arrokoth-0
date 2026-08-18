@@ -41,7 +41,8 @@ enum ParserTokenType
     VAR_CREATION,
     PROC_CREATION,
     WHILE_LOOP,
-    IF_BRANCH
+    IF_BRANCH,
+    PRINT_VAR
 };
 
 enum BinOpType
@@ -100,6 +101,7 @@ struct var_creation_token_s;
 struct proc_creation_token_s;
 struct while_loop_token_s;
 struct if_branch_token_s;
+struct print_token_s;
 
 typedef struct program_token_s
 {
@@ -212,6 +214,12 @@ typedef struct if_branch_token_s
     token_vector_t Statements;
 }
 if_branch_token_t;
+
+typedef struct print_token_s
+{
+    token_vector_t Ids;
+}
+print_token_t;
 
 program_token_t* DoParseAST(linked_list_node_t* LexTokens);
 

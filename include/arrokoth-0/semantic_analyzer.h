@@ -16,33 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef ARROKOTH_LEXER_H
-#define ARROKOTH_LEXER_H
+#ifndef ARROKOTH_SEMANTIC_ANALYZER_H
+#define ARROKOTH_SEMANTIC_ANALYZER_H
 
-#include <arrokoth-0/linked_list.h>
+#include <stdint.h>
 
-enum LexicalTokenType
+#include <arrokoth-0/parser.h>
+
+typedef struct string_vector_s
 {
-    IDENTIFIER = 0,
-    STATEMENT_DELIMITER,
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    OPERATOR,
-    NUMBER,
-    COMMA,
-    LEFT_BRACKET,
-    RIGHT_BRACKET,
-    PRINT
-};
-
-typedef struct lexical_token_s
-{
-    enum LexicalTokenType Type;
-    char* Content;
+    char** List;
+    size_t CurrSize;
+    size_t MaxSize;
 }
-lexical_token_t;
+string_vector_t;
 
-lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content);
-linked_list_node_t* DoLexicalAnalysis(const char* InputText);
+void StringVectorInit(string_vector_t* V);
+void StringVectorAppend(string_vector_t* V, char* Str);
+uint8_t StringVectorContains(string_vector_t* V, char* Str);
 
-#endif // ARROKOTH_LEXER_H
+void DoSemanticAnalyzation(program_token_t* AST);
+
+#endif // ARROKOTH_SEMANTIC_ANALYZER_H

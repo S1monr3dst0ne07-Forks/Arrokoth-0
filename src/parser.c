@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/parser.h>
@@ -68,6 +69,34 @@ static enum CompBinOpType GetCondOpType(char* Content)
 // Global var, fight me
 linked_list_node_t* TokenList = NULL;
 
+static char* LexTypeToStr(enum LexicalTokenType T)
+{
+    switch (T)
+    {
+        case IDENTIFIER:
+            return "IDENTIFIER";
+        case STATEMENT_DELIMITER:
+            return "STATEMENT_DELIMITER";
+        case LEFT_PAREN:
+            return "LEFT_PAREN";
+        case RIGHT_PAREN:
+            return "RIGHT_PAREN";
+        case OPERATOR:
+            return "OPERATOR";
+        case NUMBER:
+            return "NUMBER";
+        case COMMA:
+            return "COMMA";
+        case LEFT_BRACKET:
+            return "LEFT_BRACKET";
+        case RIGHT_BRACKET:
+            return "RIGHT_BRACKET";
+        case PRINT:
+            return "PRINT";
+    }
+    return "?";
+}
+
 static void ConsumeToken()
 {
     linked_list_node_t* ToDelete = TokenList;
@@ -107,7 +136,19 @@ static char ExpectToken(enum LexicalTokenType Type)
         ConsumeToken();
         return 1;
     }
-    exit(-1); // TODO: Make it error out properly
+    fprintf(stderr, "[PARSER] error: expected '%s', got '%s' instead\n", LexTypeToStr(Type), LexTypeToStr(PeekToken()->Type));
+    exit(-1);
+    return 0;
+}
+
+static char ExpectTokenNoConsume(enum LexicalTokenType Type)
+{
+    if (PeekToken()->Type == Type)
+    {
+        return 1;
+    }
+    fprintf(stderr, "[PARSER] error: expected '%s', got '%s' instead\n", LexTypeToStr(Type), LexTypeToStr(PeekToken()->Type));
+    exit(-1);
     return 0;
 }
 
@@ -118,7 +159,8 @@ static char ExpectExactToken(enum LexicalTokenType Type, const char* Content)
         ConsumeToken();
         return 1;
     }
-    exit(-1); // TODO: Make it error out properly
+    fprintf(stderr, "[PARSER] error: expected '%s', got '%s' instead\n", LexTypeToStr(Type), LexTypeToStr(PeekToken()->Type));
+    exit(-1);
     return 0;
 }
 
@@ -132,6 +174,7 @@ static function_token_t* FunctionCall();
 static assignment_token_t* Assignment();
 static while_loop_token_t* WhileLoop();
 static if_branch_token_t* IfBranch();
+static print_token_t* PrintVar();
 static statement_token_t* Statement();
 static proc_creation_token_t* ProcCreation();
 static var_creation_token_t* VarCreation();
@@ -141,11 +184,10 @@ static number_token_t* Number()
 {
     number_token_t* Output = (number_token_t*)malloc(sizeof(number_token_t));
 
-    if (PeekToken()->Type == NUMBER)
-    {
-        Output->Val = strtod(PeekToken()->Content, NULL);
-        ConsumeToken();
-    }
+    ExpectTokenNoConsume(NUMBER);
+
+    Output->Val = strtod(PeekToken()->Content, NULL);
+    ConsumeToken();
 
     return Output;
 }
@@ -154,12 +196,11 @@ static identifier_token_t* Identifier()
 {
     identifier_token_t* Output = (identifier_token_t*)malloc(sizeof(identifier_token_t));
 
-    if (PeekToken()->Type == IDENTIFIER)
-    {
-        Output->Text = (char*)calloc(strlen(PeekToken()->Content) + 1, 1);
-        strcpy(Output->Text, PeekToken()->Content);
-        ConsumeToken();
-    }
+    ExpectTokenNoConsume(IDENTIFIER);
+
+    Output->Text = (char*)calloc(strlen(PeekToken()->Content) + 1, 1);
+    strcpy(Output->Text, PeekToken()->Content);
+    ConsumeToken();
 
     return Output;
 }
@@ -278,6 +319,7 @@ static function_token_t* FunctionCall()
 {
     function_token_t* Output = (function_token_t*)malloc(sizeof(function_token_t));
 
+    ExpectTokenNoConsume(IDENTIFIER);
     Output->FuncName.Data = Identifier();
     Output->FuncName.Type = IDENTIFIER_TOKEN;
 
@@ -288,6 +330,7 @@ static assignment_token_t* Assignment()
 {
     assignment_token_t* Output = (assignment_token_t*)malloc(sizeof(assignment_token_t));
 
+    ExpectTokenNoConsume(IDENTIFIER);
     Output->Name.Type = IDENTIFIER_TOKEN;
     Output->Name.Data = Identifier();
     ExpectExactToken(OPERATOR, "=");
@@ -353,6 +396,24 @@ static if_branch_token_t* IfBranch()
     return Output;
 }
 
+static print_token_t* PrintVar()
+{
+    print_token_t* Output = (print_token_t*)malloc(sizeof(print_token_t));
+    TokenVectorInit(&Output->Ids);
+
+    do
+    {
+        token_wrapper_t TW;
+        ExpectTokenNoConsume(IDENTIFIER);
+        TW.Type = IDENTIFIER_TOKEN;
+        TW.Data = Identifier();
+        TokenVectorAppend(&Output->Ids, TW);
+    }
+    while (AcceptToken(COMMA));
+
+    return Output;
+}
+
 static statement_token_t* Statement()
 {
     statement_token_t* Output = (statement_token_t*)malloc(sizeof(statement_token_t));
@@ -372,6 +433,11 @@ static statement_token_t* Statement()
         Output->Child.Data = IfBranch();
         Output->Child.Type = IF_BRANCH;
     }
+    else if (AcceptToken(PRINT))
+    {
+        Output->Child.Data = PrintVar();
+        Output->Child.Type = PRINT_VAR;
+    }
     else if (PeekToken()->Type == IDENTIFIER)
     {
         Output->Child.Data = Assignment();
@@ -386,6 +452,7 @@ static proc_creation_token_t* ProcCreation()
     proc_creation_token_t* Output = (proc_creation_token_t*)malloc(sizeof(proc_creation_token_t));
     TokenVectorInit(&Output->Statements);
 
+    ExpectTokenNoConsume(IDENTIFIER);
     Output->Name.Type = IDENTIFIER_TOKEN;
     Output->Name.Data = Identifier();
 
@@ -411,6 +478,7 @@ static var_creation_token_t* VarCreation()
     do
     {
         token_wrapper_t TW;
+        ExpectTokenNoConsume(IDENTIFIER);
         TW.Type = IDENTIFIER_TOKEN;
         TW.Data = Identifier();
         TokenVectorAppend(&Output->Children, TW);

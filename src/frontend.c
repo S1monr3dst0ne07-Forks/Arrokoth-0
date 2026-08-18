@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/parser.h>
 #include <arrokoth-0/tree_transform.h>
 #include <arrokoth-0/ast_graph.h>
+#include <arrokoth-0/semantic_analyzer.h>
 
 #define I_ARG_HASH 5861499
 #define O_ARG_HASH 5861505
@@ -169,6 +170,7 @@ int main(int argc, char** argv)
         {
             DoTreeTransform(AST);
         }
+        DoSemanticAnalyzation(AST);
         GenerateAstGraph(AST);
         return 0;
     }

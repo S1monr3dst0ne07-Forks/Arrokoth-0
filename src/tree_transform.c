@@ -196,6 +196,11 @@ static crawl_result_t CrawlStatement(statement_token_t* Stmt)
         Res.NewData = Stmt->Child.Data;
         Res.NewType = FUNCTION_TOKEN;
     }
+    else if (Stmt->Child.Type == PRINT_VAR)
+    {
+        Res.NewData = Stmt->Child.Data;
+        Res.NewType = PRINT_VAR;
+    }
     else if (Stmt->Child.Type == WHILE_LOOP)
     {
         Res = CrawlWhileLoop((while_loop_token_t*)Stmt->Child.Data);

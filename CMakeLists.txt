@@ -30,6 +30,7 @@ set(
     ${CMAKE_SOURCE_DIR}/src/lexer.c
     ${CMAKE_SOURCE_DIR}/src/linked_list.c
     ${CMAKE_SOURCE_DIR}/src/parser.c
+    ${CMAKE_SOURCE_DIR}/src/semantic_analyzer.c
     ${CMAKE_SOURCE_DIR}/src/tree_transform.c
 )
 
