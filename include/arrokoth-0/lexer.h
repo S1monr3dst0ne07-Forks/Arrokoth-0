@@ -19,6 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ARROKOTH_LEXER_H
 #define ARROKOTH_LEXER_H
 
+#include <stdint.h>
+
 #include <arrokoth-0/linked_list.h>
 
 enum LexicalTokenType
@@ -37,12 +39,15 @@ enum LexicalTokenType
 
 typedef struct lexical_token_s
 {
+    size_t StartPos;
+    size_t EndPos;
+    size_t Line;
     enum LexicalTokenType Type;
     char* Content;
 }
 lexical_token_t;
 
-lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content);
-linked_list_node_t* DoLexicalAnalysis(const char* InputText);
+lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content, size_t Start, size_t End, size_t Line);
+linked_list_node_t* DoLexicalAnalysis(const char* InputText, size_t Line);
 
 #endif // ARROKOTH_LEXER_H

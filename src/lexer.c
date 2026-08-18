@@ -54,16 +54,19 @@ static char IsNumericalDigit(char CH)
     return (CH >= '0' && CH <= '9');
 }
 
-lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content)
+lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content, size_t Start, size_t End, size_t Line)
 {
     lexical_token_t* Token = (lexical_token_t*)malloc(sizeof(lexical_token_t));
     memset(Token, 0, sizeof(lexical_token_t));
     Token->Type = Type;
     Token->Content = Content;
+    Token->StartPos = Start;
+    Token->EndPos = End;
+    Token->Line = Line;
     return Token;
 }
 
-linked_list_node_t* DoLexicalAnalysis(const char* InputText)
+linked_list_node_t* DoLexicalAnalysis(const char* InputText, size_t Line)
 {
     size_t CurrPos = 0;
     size_t SavePos = 0;
@@ -90,7 +93,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             while (IsIdentifierChar(InputText[CurrPos]));
             char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* IdToken = NewToken(IDENTIFIER, Content);
+            lexical_token_t* IdToken = NewToken(IDENTIFIER, Content, SavePos, CurrPos, Line);
             TokenList = LinkedListAppend(TokenList, IdToken);
         }
 
@@ -112,35 +115,35 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             }
             char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* NumToken = NewToken(NUMBER, Content);
+            lexical_token_t* NumToken = NewToken(NUMBER, Content, SavePos, CurrPos, Line);
             TokenList = LinkedListAppend(TokenList, NumToken);
         }
 
         if (InputText[CurrPos] == ';')
         {
             CurrPos++;
-            lexical_token_t* StmtEnderToken = NewToken(STATEMENT_DELIMITER, ";");
+            lexical_token_t* StmtEnderToken = NewToken(STATEMENT_DELIMITER, ";", CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, StmtEnderToken);
         }
 
         if (InputText[CurrPos] == '(')
         {
             CurrPos++;
-            lexical_token_t* LeftParen = NewToken(LEFT_PAREN, "(");
+            lexical_token_t* LeftParen = NewToken(LEFT_PAREN, "(", CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, LeftParen);
         }
 
         if (InputText[CurrPos] == ')')
         {
             CurrPos++;
-            lexical_token_t* RightParen = NewToken(RIGHT_PAREN, ")");
+            lexical_token_t* RightParen = NewToken(RIGHT_PAREN, ")", CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, RightParen);
         }
 
         if (InputText[CurrPos] == '#')
         {
             CurrPos++;
-            lexical_token_t* Hash = NewToken(PRINT, "#");
+            lexical_token_t* Hash = NewToken(PRINT, "#", CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, Hash);
         }
 
@@ -149,7 +152,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             char* Content = (char*)calloc(2, 1);
             strncpy(Content, InputText + CurrPos, 1);
             CurrPos++;
-            lexical_token_t* OpToken = NewToken(OPERATOR, Content);
+            lexical_token_t* OpToken = NewToken(OPERATOR, Content, CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, OpToken);
         }
 
@@ -163,7 +166,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             }
             char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* OpToken = NewToken(OPERATOR, Content);
+            lexical_token_t* OpToken = NewToken(OPERATOR, Content, SavePos, CurrPos, Line);
             TokenList = LinkedListAppend(TokenList, OpToken);
         }
 
@@ -177,7 +180,7 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
             }
             char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
             strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* OpToken = NewToken(OPERATOR, Content);
+            lexical_token_t* OpToken = NewToken(OPERATOR, Content, SavePos, CurrPos, Line);
             TokenList = LinkedListAppend(TokenList, OpToken);
         }
 
@@ -190,12 +193,12 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
                 CurrPos++;
                 char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
                 strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-                lexical_token_t* OpToken = NewToken(OPERATOR, Content);
+                lexical_token_t* OpToken = NewToken(OPERATOR, Content, SavePos, CurrPos, Line);
                 TokenList = LinkedListAppend(TokenList, OpToken);
             }
             else
             {
-                fprintf(stderr, "[LEXER] error: expected '=' after '!' to form '!=' (NOT EQUAL) operator, got %c instead\n", InputText[CurrPos]);
+                fprintf(stderr, "[LEXER @ Line %lld Column %lld] error: expected '=' after '!' to form '!=' (NOT EQUAL) operator, got %c instead\n", Line, CurrPos, InputText[CurrPos]);
                 exit(-1);
             }
         }
@@ -203,21 +206,21 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText)
         if (InputText[CurrPos] == ',')
         {
             CurrPos++;
-            lexical_token_t* CommaToken = NewToken(COMMA, ",");
+            lexical_token_t* CommaToken = NewToken(COMMA, ",", CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, CommaToken);
         }
 
         if (InputText[CurrPos] == '{')
         {
             CurrPos++;
-            lexical_token_t* LeftBracket = NewToken(LEFT_BRACKET, "{");
+            lexical_token_t* LeftBracket = NewToken(LEFT_BRACKET, "{", CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, LeftBracket);
         }
 
         if (InputText[CurrPos] == '}')
         {
             CurrPos++;
-            lexical_token_t* RightBracket = NewToken(RIGHT_BRACKET, "}");
+            lexical_token_t* RightBracket = NewToken(RIGHT_BRACKET, "}", CurrPos-1, CurrPos-1, Line);
             TokenList = LinkedListAppend(TokenList, RightBracket);
         }
     }

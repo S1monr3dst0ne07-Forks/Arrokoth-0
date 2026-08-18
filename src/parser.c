@@ -129,38 +129,53 @@ static char AcceptExactToken(enum LexicalTokenType Type, const char* Content)
     return 0;
 }
 
+static void ExpectError(enum LexicalTokenType T1, enum LexicalTokenType T2, size_t Line, size_t SC, size_t EC)
+{
+    char ColumnStr[64] = {0};
+    if (SC == EC)
+    {
+        snprintf(ColumnStr, 64, "Column %lld", SC);
+    }
+    else
+    {
+        snprintf(ColumnStr, 64, "Columns %lld to %lld", SC, EC);
+    }
+    fprintf(stderr, "[PARSER @ Line %lld %s] error: expected '%s', got '%s' instead\n", Line, ColumnStr, LexTypeToStr(T1), LexTypeToStr(T2));
+    exit(-1);
+}
+
 static char ExpectToken(enum LexicalTokenType Type)
 {
-    if (PeekToken()->Type == Type)
+    lexical_token_t* Tok = PeekToken();
+    if (Tok->Type == Type)
     {
         ConsumeToken();
         return 1;
     }
-    fprintf(stderr, "[PARSER] error: expected '%s', got '%s' instead\n", LexTypeToStr(Type), LexTypeToStr(PeekToken()->Type));
-    exit(-1);
+    ExpectError(Type, Tok->Type, Tok->Line, Tok->StartPos, Tok->EndPos);
     return 0;
 }
 
 static char ExpectTokenNoConsume(enum LexicalTokenType Type)
 {
-    if (PeekToken()->Type == Type)
+    lexical_token_t* Tok = PeekToken();
+    if (Tok->Type == Type)
     {
         return 1;
     }
-    fprintf(stderr, "[PARSER] error: expected '%s', got '%s' instead\n", LexTypeToStr(Type), LexTypeToStr(PeekToken()->Type));
-    exit(-1);
+    ExpectError(Type, Tok->Type, Tok->Line, Tok->StartPos, Tok->EndPos);
     return 0;
 }
 
 static char ExpectExactToken(enum LexicalTokenType Type, const char* Content)
 {
-    if (PeekToken()->Type == Type && (!strcmp(PeekToken()->Content, Content)))
+    lexical_token_t* Tok = PeekToken();
+    if (Tok->Type == Type && (!strcmp(Tok->Content, Content)))
     {
         ConsumeToken();
         return 1;
     }
-    fprintf(stderr, "[PARSER] error: expected '%s', got '%s' instead\n", LexTypeToStr(Type), LexTypeToStr(PeekToken()->Type));
-    exit(-1);
+    ExpectError(Type, Tok->Type, Tok->Line, Tok->StartPos, Tok->EndPos);
     return 0;
 }
 

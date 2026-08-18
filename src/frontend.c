@@ -149,17 +149,19 @@ int main(int argc, char** argv)
     linked_list_node_t* Tokens = NULL;
 
     char Line[4096];
+    size_t LineC = 1;
     while (fgets(Line, 4096, ToRead) != NULL)
     {
         if (Tokens)
         {
-            linked_list_node_t* NewTokens = DoLexicalAnalysis(Line);
+            linked_list_node_t* NewTokens = DoLexicalAnalysis(Line, LineC);
             LinkedListAppendDirectly(Tokens, NewTokens);
         }
         else
         {
-            Tokens = DoLexicalAnalysis(Line);
+            Tokens = DoLexicalAnalysis(Line, LineC);
         }
+        LineC++;
     }
 
     program_token_t* AST = DoParseAST(Tokens);
