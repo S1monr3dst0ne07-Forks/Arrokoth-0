@@ -254,13 +254,26 @@ static factor_token_t* Factor()
 
     while (AcceptExactToken(OPERATOR, "^"))
     {
-        bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
-        BinOp->R = ParentTree;
-        BinOp->L.Type = ATOM;
-        BinOp->L.Data = Atom();
-        BinOp->Operator = EXP;
-        ParentTree.Type = BIN_OP;
-        ParentTree.Data = BinOp;
+        if (ParentTree.Type == ATOM)
+        {
+            bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
+            BinOp->L = ParentTree;
+            BinOp->R.Type = ATOM;
+            BinOp->R.Data = Atom();
+            BinOp->Operator = EXP;
+            ParentTree.Type = BIN_OP;
+            ParentTree.Data = BinOp;
+        }
+        else
+        {
+            bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
+            BinOp->R = ParentTree;
+            BinOp->L.Type = ATOM;
+            BinOp->L.Data = Atom();
+            BinOp->Operator = EXP;
+            ParentTree.Type = BIN_OP;
+            ParentTree.Data = BinOp;
+        }
     }
 
     Output->Child = ParentTree;
@@ -298,19 +311,8 @@ static expression_token_t* Expression()
     expression_token_t* Output = (expression_token_t*)malloc(sizeof(expression_token_t));
     token_wrapper_t ParentTree;
 
-    if (AcceptExactToken(OPERATOR, "-"))
-    {
-        unary_minus_token_t* UnOp = (unary_minus_token_t*)malloc(sizeof(unary_minus_token_t));
-        UnOp->Child.Type = TERM;
-        UnOp->Child.Data = Term();
-        ParentTree.Type = UNARY_MINUS;
-        ParentTree.Data = UnOp;
-    }
-    else
-    {
-        ParentTree.Type = TERM;
-        ParentTree.Data = Term();
-    }
+    ParentTree.Type = TERM;
+    ParentTree.Data = Term();
 
     char* Op;
     Op = PeekToken()->Content;

@@ -54,6 +54,11 @@ static char IsNumericalDigit(char CH)
     return (CH >= '0' && CH <= '9');
 }
 
+static char IsCommentStart(char CH)
+{
+    return (CH == '[');
+}
+
 lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content, size_t Start, size_t End, size_t Line)
 {
     lexical_token_t* Token = (lexical_token_t*)malloc(sizeof(lexical_token_t));
@@ -81,6 +86,11 @@ linked_list_node_t* DoLexicalAnalysis(const char* InputText, size_t Line)
                 CurrPos++;
             }
             while (IsWhitespaceChar(InputText[CurrPos]));
+        }
+
+        if (IsCommentStart(InputText[CurrPos]))
+        {
+            return TokenList;
         }
 
         if (IsStartingIdentifierChar(InputText[CurrPos]))

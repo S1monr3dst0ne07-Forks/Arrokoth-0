@@ -33,7 +33,6 @@ static crawl_result_t CrawlAtom(atom_token_t* Atom);
 static crawl_result_t CrawlFactor(factor_token_t* Factor);
 static crawl_result_t CrawlTerm(term_token_t* Term);
 static crawl_result_t CrawlBinOp(bin_op_token_t* BinOp);
-static crawl_result_t CrawlUnaryOp(unary_minus_token_t* UnOp);
 static crawl_result_t CrawlExpression(expression_token_t* Expr);
 static crawl_result_t CrawlAssignment(assignment_token_t* Assign);
 static crawl_result_t CrawlIfBranch(if_branch_token_t* IfBranch);
@@ -48,8 +47,6 @@ static crawl_result_t DispatchCall(void* Data, enum ParserTokenType Type)
     {
         case EXPRESSION:
             return CrawlExpression((expression_token_t*)Data);
-        case UNARY_MINUS:
-            return CrawlUnaryOp((unary_minus_token_t*)Data);
         case BIN_OP:
             return CrawlBinOp((bin_op_token_t*)Data);
         case TERM:
@@ -98,19 +95,6 @@ static crawl_result_t CrawlBinOp(bin_op_token_t* BinOp)
     crawl_result_t RValueRes = DispatchCall(BinOp->R.Data, BinOp->R.Type);
     BinOp->R.Data = RValueRes.NewData;
     BinOp->R.Type = RValueRes.NewType;
-
-    return Res;
-}
-
-static crawl_result_t CrawlUnaryOp(unary_minus_token_t* UnOp)
-{
-    crawl_result_t Res;
-    Res.NewData = UnOp;
-    Res.NewType = UNARY_MINUS;
-
-    crawl_result_t ValueRes = DispatchCall(UnOp->Child.Data, UnOp->Child.Type);
-    UnOp->Child.Data = ValueRes.NewData;
-    UnOp->Child.Type = ValueRes.NewType;
 
     return Res;
 }

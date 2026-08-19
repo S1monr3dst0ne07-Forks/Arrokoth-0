@@ -63,7 +63,6 @@ static string_vector_t ProcedureList;
 static void AnalyzeWhileLoop(while_loop_token_t* While);
 static void AnalyzeIfBranch(if_branch_token_t* IfBranch);
 static void AnalyzeBinOp(bin_op_token_t* BinOp);
-static void AnalyzeUnaryMinus(unary_minus_token_t* UnaryMinus);
 static void AnalyzePrintVar(print_token_t* Print);
 static void AnalyzeFunctionCall(function_token_t* Func);
 static void AnalyzeAssignment(assignment_token_t* Assign);
@@ -89,9 +88,6 @@ static void DispatchCall(token_wrapper_t TW)
             break;
         case PRINT_VAR:
             AnalyzePrintVar((print_token_t*)TW.Data);
-            break;
-        case UNARY_MINUS:
-            AnalyzeUnaryMinus((unary_minus_token_t*)TW.Data);
             break;
         case BIN_OP:
             AnalyzeBinOp((bin_op_token_t*)TW.Data);
@@ -231,23 +227,6 @@ static void AnalyzeBinOp(bin_op_token_t* BinOp)
     }
 }
 
-static void AnalyzeUnaryMinus(unary_minus_token_t* UnaryMinus)
-{
-    if (UnaryMinus->Child.Type == IDENTIFIER_TOKEN)
-    {
-        identifier_token_t* ID = (identifier_token_t*)UnaryMinus->Child.Data;
-        if (!StringVectorContains(&VariableList, ID->Text))
-        {
-            fprintf(stderr, "[SEMANTIC ANALYZER] error: variable '%s' doesn't exist", ID->Text);
-            exit(-1);
-        }
-    }
-    else if (UnaryMinus->Child.Type != NUMBER_TOKEN)
-    {
-        DispatchCall(UnaryMinus->Child);
-    }
-}
-
 static void AnalyzePrintVar(print_token_t* Print)
 {
     for (size_t N = 0; N < Print->Ids.CurrSize; N++)
@@ -329,4 +308,9 @@ void DoSemanticAnalyzation(program_token_t* AST)
     StringVectorInit(&VariableList);
     StringVectorInit(&ProcedureList);
     AnalyzeProgram(AST);
+    if (!StringVectorContains(&ProcedureList, "main"))
+    {
+        fputs("[SEMANTIC ANALYZER] error: procedure 'main' doesn't exist", stderr);
+        exit(-1);
+    }
 }

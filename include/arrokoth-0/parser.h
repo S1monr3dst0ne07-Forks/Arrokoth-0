@@ -30,7 +30,6 @@ enum ParserTokenType
     ASSIGNMENT_TOKEN,
     FUNCTION_TOKEN,
     EXPRESSION,
-    UNARY_MINUS,
     BIN_OP,
     TERM,
     FACTOR,
@@ -89,7 +88,6 @@ struct assignment_token_s;
 struct function_token_s;
 struct identifier_token_s;
 struct expression_token_s;
-struct unary_minus_token_s;
 struct bin_op_token_s;
 struct term_token_s;
 struct factor_token_s;
@@ -139,12 +137,6 @@ typedef struct expression_token_s
     token_wrapper_t Child;
 }
 expression_token_t;
-
-typedef struct unary_minus_token_s
-{
-    token_wrapper_t Child;
-}
-unary_minus_token_t;
 
 typedef struct bin_op_token_s
 {

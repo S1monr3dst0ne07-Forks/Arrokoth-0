@@ -32,7 +32,6 @@ static char* CrawlFactor(factor_token_t* Factor);
 static char* CrawlTerm(term_token_t* Term);
 static char* CrawlExpression(expression_token_t* Expr);
 static char* CrawlBinOp(bin_op_token_t* BinOp);
-static char* CrawlUnaryMinus(unary_minus_token_t* UM);
 static char* CrawlPrintVar(print_token_t* PrintV);
 static char* CrawlFunction(function_token_t* Func);
 static char* CrawlAssignment(assignment_token_t* Assign);
@@ -67,8 +66,6 @@ static char* DispatchCall(token_wrapper_t TV)
             return CrawlFunction((function_token_t*)TV.Data);
         case PRINT_VAR:
             return CrawlPrintVar((print_token_t*)TV.Data);
-        case UNARY_MINUS:
-            return CrawlUnaryMinus((unary_minus_token_t*)TV.Data);
         case BIN_OP:
             return CrawlBinOp((bin_op_token_t*)TV.Data);
         case EXPRESSION:
@@ -182,20 +179,6 @@ static char* CrawlBinOp(bin_op_token_t* BinOp)
     fprintf(OutputFile, "%s -> %s\n", BinOpName, ConnectTo2);
 
     return BinOpName;
-}
-
-static char* CrawlUnaryMinus(unary_minus_token_t* UM)
-{
-    static size_t UMNum = 0;
-    char* UMName = (char*)malloc(64);
-    snprintf(UMName, 64, "UM%lld", UMNum);
-    fprintf(OutputFile, "%s [label=\"Unary Minus\",fillcolor=darksalmon,style=filled,fontcolor=white]\n", UMName);
-    UMNum++;
-
-    char* ConnectTo = DispatchCall(UM->Child);
-    fprintf(OutputFile, "%s -> %s\n", UMName, ConnectTo);
-
-    return UMName;
 }
 
 static char* CrawlPrintVar(print_token_t* PrintV)
@@ -377,6 +360,7 @@ static void CrawlProgram(program_token_t* Prog)
 
 void GenerateAstGraph(program_token_t* AST)
 {
+    fputs(CompilerFlags.OutputFile, OutputFile);
     if (!strcmp(CompilerFlags.OutputFile, "-"))
     {
         OutputFile = stdout;
@@ -391,4 +375,6 @@ void GenerateAstGraph(program_token_t* AST)
     fputs("digraph\n{\n", OutputFile);
     CrawlProgram(AST);
     fputs("}", OutputFile);
+
+    fclose(OutputFile);
 }

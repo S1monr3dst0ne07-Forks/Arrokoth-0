@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 4.0.0 FATAL_ERROR)
 
 project(
     "Arrokoth-0"
-    VERSION 0.0.0
+    VERSION 1.0.0
     DESCRIPTION "A simple, basic programming language as a learning project."
     LANGUAGES C
 )
@@ -26,6 +26,7 @@ project(
 set(
     ARROKOTH_SRC
     ${CMAKE_SOURCE_DIR}/src/ast_graph.c
+    ${CMAKE_SOURCE_DIR}/src/codegen.c
     ${CMAKE_SOURCE_DIR}/src/frontend.c
     ${CMAKE_SOURCE_DIR}/src/lexer.c
     ${CMAKE_SOURCE_DIR}/src/linked_list.c
