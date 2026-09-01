@@ -40,7 +40,7 @@ factor = atom {"^" atom} ;
 atom = identifier | number | "(" expression ")" ;
 ```
 
-Comments shall be enclosed with `[]`.
+There are only single line comments, which shall start with `[`.
 
 ## Compiler stages
 
