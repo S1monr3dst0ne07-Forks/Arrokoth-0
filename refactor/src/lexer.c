@@ -91,7 +91,7 @@ token_t DoLexicalAnalysis(FILE* fd)
 
     char c;
     size_t line = 1;
-    for (int i = 0; c = source[i]; i++)
+    for (int i = 0; (c = source[i]); i++)
     {
         if (c == '\n') line++;
 

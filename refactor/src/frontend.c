@@ -81,6 +81,12 @@ int main(int argc, char** argv)
 
     token_t stream = DoLexicalAnalysis(InputFd);
 
+    while (stream)
+    {
+        printf("%s\n", stream->content);
+        stream = stream->next;
+    }
+
     /*
     program_token_t* AST = DoParseAST(Tokens);
 
