@@ -23,31 +23,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <arrokoth-0/linked_list.h>
 
-enum LexicalTokenType
+typedef enum token_type_e
 {
-    IDENTIFIER = 0,
-    STATEMENT_DELIMITER,
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    OPERATOR,
-    NUMBER,
-    COMMA,
-    LEFT_BRACKET,
-    RIGHT_BRACKET,
-    PRINT
-};
+    TT_IDENTIFIER,
+    TT_STATEMENT_DELIMITER,
+    TT_LEFT_PAREN,
+    TT_RIGHT_PAREN,
+    TT_OPERATOR,
+    TT_NUMBER,
+    TT_COMMA,
+    TT_LEFT_BRACKET,
+    TT_RIGHT_BRACKET,
+    TT_PRINT,
+    TT_FORMATTING,
+} token_type_t;
 
-typedef struct lexical_token_s
+typedef struct token_s
 {
-    size_t StartPos;
-    size_t EndPos;
-    size_t Line;
-    enum LexicalTokenType Type;
-    char* Content;
+    size_t line;
+    token_type_t type;
+    char* content;
+
+    // NULL for end of token stream.
+    struct token_s* next;
 }
-lexical_token_t;
+*token_t;
 
-lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content, size_t Start, size_t End, size_t Line);
-linked_list_node_t* DoLexicalAnalysis(const char* InputText, size_t Line);
+token_t DoLexicalAnalysis(FILE* fd);
 
 #endif // ARROKOTH_LEXER_H

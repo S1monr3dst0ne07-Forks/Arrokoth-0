@@ -69,29 +69,29 @@ static enum CompBinOpType GetCondOpType(char* Content)
 // Global var, fight me
 linked_list_node_t* TokenList = NULL;
 
-static char* LexTypeToStr(enum LexicalTokenType T)
+static char* LexTypeToStr(token_type_t T)
 {
     switch (T)
     {
-        case IDENTIFIER:
+        case TT_IDENTIFIER:
             return "IDENTIFIER";
-        case STATEMENT_DELIMITER:
+        case TT_STATEMENT_DELIMITER:
             return "STATEMENT_DELIMITER";
-        case LEFT_PAREN:
+        case TT_LEFT_PAREN:
             return "LEFT_PAREN";
-        case RIGHT_PAREN:
+        case TT_RIGHT_PAREN:
             return "RIGHT_PAREN";
-        case OPERATOR:
+        case TT_OPERATOR:
             return "OPERATOR";
-        case NUMBER:
+        case TT_NUMBER:
             return "NUMBER";
-        case COMMA:
+        case TT_COMMA:
             return "COMMA";
-        case LEFT_BRACKET:
+        case TT_LEFT_BRACKET:
             return "LEFT_BRACKET";
-        case RIGHT_BRACKET:
+        case TT_RIGHT_BRACKET:
             return "RIGHT_BRACKET";
-        case PRINT:
+        case TT_PRINT:
             return "PRINT";
     }
     return "?";
@@ -104,14 +104,14 @@ static void ConsumeToken()
     LinkedListDestroySingular(ToDelete);
 }
 
-static lexical_token_t* PeekToken()
+static token_t PeekToken()
 {
-    return ((lexical_token_t*)TokenList->Data);
+    return ((token_t)TokenList->Data);
 }
 
-static char AcceptToken(enum LexicalTokenType Type)
+static char AcceptToken(token_type_t Type)
 {
-    if (PeekToken()->Type == Type)
+    if (PeekToken()->type == Type)
     {
         ConsumeToken();
         return 1;
@@ -119,9 +119,9 @@ static char AcceptToken(enum LexicalTokenType Type)
     return 0;
 }
 
-static char AcceptExactToken(enum LexicalTokenType Type, const char* Content)
+static char AcceptExactToken(token_type_t Type, const char* Content)
 {
-    if (PeekToken()->Type == Type && (!strcmp(PeekToken()->Content, Content)))
+    if (PeekToken()->type == Type && (!strcmp(PeekToken()->content, Content)))
     {
         ConsumeToken();
         return 1;
@@ -129,53 +129,44 @@ static char AcceptExactToken(enum LexicalTokenType Type, const char* Content)
     return 0;
 }
 
-static void ExpectError(enum LexicalTokenType T1, enum LexicalTokenType T2, size_t Line, size_t SC, size_t EC)
+static void ExpectError(token_type_t T1, token_type_t T2, size_t Line)
 {
-    char ColumnStr[64] = {0};
-    if (SC == EC)
-    {
-        snprintf(ColumnStr, 64, "Column %lld", SC);
-    }
-    else
-    {
-        snprintf(ColumnStr, 64, "Columns %lld to %lld", SC, EC);
-    }
-    fprintf(stderr, "[PARSER @ Line %lld %s] error: expected '%s', got '%s' instead\n", Line, ColumnStr, LexTypeToStr(T1), LexTypeToStr(T2));
-    exit(-1);
+    fprintf(stderr, "[PARSER @ Line %lld] error: expected '%s', got '%s' instead\n", Line, LexTypeToStr(T1), LexTypeToStr(T2));
+    exit(1);
 }
 
-static char ExpectToken(enum LexicalTokenType Type)
+static char ExpectToken(token_type_t Type)
 {
-    lexical_token_t* Tok = PeekToken();
-    if (Tok->Type == Type)
+    token_t Tok = PeekToken();
+    if (Tok->type == Type)
     {
         ConsumeToken();
         return 1;
     }
-    ExpectError(Type, Tok->Type, Tok->Line, Tok->StartPos, Tok->EndPos);
+    ExpectError(Type, Tok->type, Tok->line);
     return 0;
 }
 
-static char ExpectTokenNoConsume(enum LexicalTokenType Type)
+static char ExpectTokenNoConsume(token_type_t Type)
 {
-    lexical_token_t* Tok = PeekToken();
-    if (Tok->Type == Type)
+    token_t Tok = PeekToken();
+    if (Tok->type == Type)
     {
         return 1;
     }
-    ExpectError(Type, Tok->Type, Tok->Line, Tok->StartPos, Tok->EndPos);
+    ExpectError(Type, Tok->type, Tok->line);
     return 0;
 }
 
-static char ExpectExactToken(enum LexicalTokenType Type, const char* Content)
+static char ExpectExactToken(token_type_t Type, const char* Content)
 {
-    lexical_token_t* Tok = PeekToken();
-    if (Tok->Type == Type && (!strcmp(Tok->Content, Content)))
+    token_t Tok = PeekToken();
+    if (Tok->type == Type && (!strcmp(Tok->content, Content)))
     {
         ConsumeToken();
         return 1;
     }
-    ExpectError(Type, Tok->Type, Tok->Line, Tok->StartPos, Tok->EndPos);
+    ExpectError(Type, Tok->type, Tok->line);
     return 0;
 }
 
@@ -199,9 +190,9 @@ static number_token_t* Number()
 {
     number_token_t* Output = (number_token_t*)malloc(sizeof(number_token_t));
 
-    ExpectTokenNoConsume(NUMBER);
+    ExpectTokenNoConsume(TT_NUMBER);
 
-    Output->Val = strtod(PeekToken()->Content, NULL);
+    Output->Val = strtod(PeekToken()->content, NULL);
     ConsumeToken();
 
     return Output;
@@ -211,10 +202,10 @@ static identifier_token_t* Identifier()
 {
     identifier_token_t* Output = (identifier_token_t*)malloc(sizeof(identifier_token_t));
 
-    ExpectTokenNoConsume(IDENTIFIER);
+    ExpectTokenNoConsume(TT_IDENTIFIER);
 
-    Output->Text = (char*)calloc(strlen(PeekToken()->Content) + 1, 1);
-    strcpy(Output->Text, PeekToken()->Content);
+    Output->Text = (char*)calloc(strlen(PeekToken()->content) + 1, 1);
+    strcpy(Output->Text, PeekToken()->content);
     ConsumeToken();
 
     return Output;
@@ -224,21 +215,21 @@ static atom_token_t* Atom()
 {
     atom_token_t* Output = (atom_token_t*)malloc(sizeof(atom_token_t));
 
-    if (PeekToken()->Type == IDENTIFIER)
+    if (PeekToken()->type == TT_IDENTIFIER)
     {
         Output->Child.Type = IDENTIFIER_TOKEN;
         Output->Child.Data = Identifier();
     }
-    else if (PeekToken()->Type == NUMBER)
+    else if (PeekToken()->type == TT_NUMBER)
     {
         Output->Child.Type = NUMBER_TOKEN;
         Output->Child.Data = Number();
     }
-    else if (ExpectToken(LEFT_PAREN))
+    else if (ExpectToken(TT_LEFT_PAREN))
     {
         Output->Child.Type = EXPRESSION;
         Output->Child.Data = Expression();
-        ExpectToken(RIGHT_PAREN);
+        ExpectToken(TT_RIGHT_PAREN);
     }
 
     return Output;
@@ -252,7 +243,7 @@ static factor_token_t* Factor()
     ParentTree.Type = ATOM;
     ParentTree.Data = Atom();
 
-    while (AcceptExactToken(OPERATOR, "^"))
+    while (AcceptExactToken(TT_OPERATOR, "^"))
     {
         if (ParentTree.Type == ATOM)
         {
@@ -289,8 +280,8 @@ static term_token_t* Term()
     ParentTree.Data = Factor();
 
     char* Op;
-    Op = PeekToken()->Content;
-    while (AcceptExactToken(OPERATOR, "*") || AcceptExactToken(OPERATOR, "/"))
+    Op = PeekToken()->content;
+    while (AcceptExactToken(TT_OPERATOR, "*") || AcceptExactToken(TT_OPERATOR, "/"))
     {
         bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
         BinOp->L = ParentTree;
@@ -299,7 +290,7 @@ static term_token_t* Term()
         BinOpSetOperator(BinOp, Op);
         ParentTree.Type = BIN_OP;
         ParentTree.Data = BinOp;
-        Op = PeekToken()->Content;
+        Op = PeekToken()->content;
     }
 
     Output->Child = ParentTree;
@@ -315,8 +306,8 @@ static expression_token_t* Expression()
     ParentTree.Data = Term();
 
     char* Op;
-    Op = PeekToken()->Content;
-    while (AcceptExactToken(OPERATOR, "+") || AcceptExactToken(OPERATOR, "-"))
+    Op = PeekToken()->content;
+    while (AcceptExactToken(TT_OPERATOR, "+") || AcceptExactToken(TT_OPERATOR, "-"))
     {
         bin_op_token_t* BinOp = (bin_op_token_t*)malloc(sizeof(bin_op_token_t));
         BinOp->L = ParentTree;
@@ -325,7 +316,7 @@ static expression_token_t* Expression()
         BinOpSetOperator(BinOp, Op);
         ParentTree.Type = BIN_OP;
         ParentTree.Data = BinOp;
-        Op = PeekToken()->Content;
+        Op = PeekToken()->content;
     }
 
     Output->Child = ParentTree;
@@ -336,7 +327,7 @@ static function_token_t* FunctionCall()
 {
     function_token_t* Output = (function_token_t*)malloc(sizeof(function_token_t));
 
-    ExpectTokenNoConsume(IDENTIFIER);
+    ExpectTokenNoConsume(TT_IDENTIFIER);
     Output->FuncName.Data = Identifier();
     Output->FuncName.Type = IDENTIFIER_TOKEN;
 
@@ -347,10 +338,10 @@ static assignment_token_t* Assignment()
 {
     assignment_token_t* Output = (assignment_token_t*)malloc(sizeof(assignment_token_t));
 
-    ExpectTokenNoConsume(IDENTIFIER);
+    ExpectTokenNoConsume(TT_IDENTIFIER);
     Output->Name.Type = IDENTIFIER_TOKEN;
     Output->Name.Data = Identifier();
-    ExpectExactToken(OPERATOR, "=");
+    ExpectExactToken(TT_OPERATOR, "=");
     Output->Val.Data = Expression();
     Output->Val.Type = EXPRESSION;
 
@@ -365,22 +356,22 @@ static while_loop_token_t* WhileLoop()
     Output->L.Type = EXPRESSION;
     Output->L.Data = Expression();
 
-    Output->OpType = GetCondOpType(PeekToken()->Content);
-    ExpectToken(OPERATOR);
+    Output->OpType = GetCondOpType(PeekToken()->content);
+    ExpectToken(TT_OPERATOR);
 
     Output->R.Type = EXPRESSION;
     Output->R.Data = Expression();
 
-    ExpectToken(LEFT_BRACKET);
+    ExpectToken(TT_LEFT_BRACKET);
     do
     {
         token_wrapper_t TW;
         TW.Type = STATEMENT_TOKEN;
         TW.Data = Statement();
         TokenVectorAppend(&Output->Statements, TW);
-        ExpectToken(STATEMENT_DELIMITER);
+        ExpectToken(TT_STATEMENT_DELIMITER);
     }
-    while (!AcceptToken(RIGHT_BRACKET));
+    while (!AcceptToken(TT_RIGHT_BRACKET));
 
     return Output;
 }
@@ -393,22 +384,22 @@ static if_branch_token_t* IfBranch()
     Output->L.Type = EXPRESSION;
     Output->L.Data = Expression();
 
-    Output->OpType = GetCondOpType(PeekToken()->Content);
-    ExpectToken(OPERATOR);
+    Output->OpType = GetCondOpType(PeekToken()->content);
+    ExpectToken(TT_OPERATOR);
 
     Output->R.Type = EXPRESSION;
     Output->R.Data = Expression();
 
-    ExpectToken(LEFT_BRACKET);
+    ExpectToken(TT_LEFT_BRACKET);
     do
     {
         token_wrapper_t TW;
         TW.Type = STATEMENT_TOKEN;
         TW.Data = Statement();
         TokenVectorAppend(&Output->Statements, TW);
-        ExpectToken(STATEMENT_DELIMITER);
+        ExpectToken(TT_STATEMENT_DELIMITER);
     }
-    while (!AcceptToken(RIGHT_BRACKET));
+    while (!AcceptToken(TT_RIGHT_BRACKET));
 
     return Output;
 }
@@ -421,12 +412,12 @@ static print_token_t* PrintVar()
     do
     {
         token_wrapper_t TW;
-        ExpectTokenNoConsume(IDENTIFIER);
+        ExpectTokenNoConsume(TT_IDENTIFIER);
         TW.Type = IDENTIFIER_TOKEN;
         TW.Data = Identifier();
         TokenVectorAppend(&Output->Ids, TW);
     }
-    while (AcceptToken(COMMA));
+    while (AcceptToken(TT_COMMA));
 
     return Output;
 }
@@ -435,27 +426,27 @@ static statement_token_t* Statement()
 {
     statement_token_t* Output = (statement_token_t*)malloc(sizeof(statement_token_t));
 
-    if (AcceptExactToken(IDENTIFIER, "run"))
+    if (AcceptExactToken(TT_IDENTIFIER, "run"))
     {
         Output->Child.Data = FunctionCall();
         Output->Child.Type = FUNCTION_TOKEN;
     }
-    else if (AcceptExactToken(IDENTIFIER, "while"))
+    else if (AcceptExactToken(TT_IDENTIFIER, "while"))
     {
         Output->Child.Data = WhileLoop();
         Output->Child.Type = WHILE_LOOP;
     }
-    else if (AcceptExactToken(IDENTIFIER, "if"))
+    else if (AcceptExactToken(TT_IDENTIFIER, "if"))
     {
         Output->Child.Data = IfBranch();
         Output->Child.Type = IF_BRANCH;
     }
-    else if (AcceptToken(PRINT))
+    else if (AcceptToken(TT_PRINT))
     {
         Output->Child.Data = PrintVar();
         Output->Child.Type = PRINT_VAR;
     }
-    else if (PeekToken()->Type == IDENTIFIER)
+    else if (PeekToken()->type == TT_IDENTIFIER)
     {
         Output->Child.Data = Assignment();
         Output->Child.Type = ASSIGNMENT_TOKEN;
@@ -469,20 +460,20 @@ static proc_creation_token_t* ProcCreation()
     proc_creation_token_t* Output = (proc_creation_token_t*)malloc(sizeof(proc_creation_token_t));
     TokenVectorInit(&Output->Statements);
 
-    ExpectTokenNoConsume(IDENTIFIER);
+    ExpectTokenNoConsume(TT_IDENTIFIER);
     Output->Name.Type = IDENTIFIER_TOKEN;
     Output->Name.Data = Identifier();
 
-    ExpectToken(LEFT_BRACKET);
+    ExpectToken(TT_LEFT_BRACKET);
     do
     {
         token_wrapper_t TW;
         TW.Type = STATEMENT_TOKEN;
         TW.Data = Statement();
         TokenVectorAppend(&Output->Statements, TW);
-        ExpectToken(STATEMENT_DELIMITER);
+        ExpectToken(TT_STATEMENT_DELIMITER);
     }
-    while (!AcceptToken(RIGHT_BRACKET));
+    while (!AcceptToken(TT_RIGHT_BRACKET));
 
     return Output;
 }
@@ -495,13 +486,13 @@ static var_creation_token_t* VarCreation()
     do
     {
         token_wrapper_t TW;
-        ExpectTokenNoConsume(IDENTIFIER);
+        ExpectTokenNoConsume(TT_IDENTIFIER);
         TW.Type = IDENTIFIER_TOKEN;
         TW.Data = Identifier();
         TokenVectorAppend(&Output->Children, TW);
     }
-    while (AcceptToken(COMMA));
-    ExpectToken(STATEMENT_DELIMITER);
+    while (AcceptToken(TT_COMMA));
+    ExpectToken(TT_STATEMENT_DELIMITER);
 
     return Output;
 }
@@ -510,12 +501,12 @@ static block_token_t* Block()
 {
     block_token_t* Output = (block_token_t*)malloc(sizeof(block_token_t));
 
-    if (AcceptExactToken(IDENTIFIER, "var"))
+    if (AcceptExactToken(TT_IDENTIFIER, "var"))
     {
         Output->Child.Type = VAR_CREATION;
         Output->Child.Data = VarCreation();
     }
-    else if (ExpectExactToken(IDENTIFIER, "proc"))
+    else if (ExpectExactToken(TT_IDENTIFIER, "proc"))
     {
         Output->Child.Type = PROC_CREATION;
         Output->Child.Data = ProcCreation();
@@ -530,7 +521,7 @@ program_token_t* DoParseAST(linked_list_node_t* LexTokens)
     program_token_t* Prog = (program_token_t*)malloc(sizeof(program_token_t));
     TokenVectorInit(&Prog->Blocks);
 
-    if (ExpectExactToken(IDENTIFIER, "program"))
+    if (ExpectExactToken(TT_IDENTIFIER, "program"))
     {
         do
         {
@@ -539,7 +530,7 @@ program_token_t* DoParseAST(linked_list_node_t* LexTokens)
             TW.Data = Block();
             TokenVectorAppend(&Prog->Blocks, TW);
         }
-        while (!AcceptExactToken(IDENTIFIER, "end"));
+        while (!AcceptExactToken(TT_IDENTIFIER, "end"));
     }
 
     TokenList = NULL;

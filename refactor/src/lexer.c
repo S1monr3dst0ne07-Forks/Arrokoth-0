@@ -20,219 +20,100 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/linked_list.h>
 
-static char IsWhitespaceChar(char CH)
+token_type_t GetTokenType(char c)
 {
-    return (CH >= 9 && CH <= 13) || (CH == 32);
+    if (c >= 'a' && c <= 'z') return TT_IDENTIFIER;
+    if (c >= 'A' && c <= 'Z') return TT_IDENTIFIER;
+    if (c == '_')             return TT_IDENTIFIER;
+
+    if (c == ';') return TT_STATEMENT_DELIMITER;
+
+    if (c == '(') return TT_LEFT_PAREN;
+    if (c == ')') return TT_RIGHT_PAREN;
+
+    if (c == '{') return TT_LEFT_BRACKET;
+    if (c == '}') return TT_RIGHT_BRACKET;
+
+    if ((c == '*') || (c == '/') || (c == '+') || (c == '-') || (c == '^')) return TT_OPERATOR;
+    if ((c == '>') || (c == '<')) return TT_OPERATOR;
+    if (c == '=') return TT_OPERATOR;
+
+    if (c >= '0' && c <= '9') return TT_NUMBER;
+
+    if (c == ',') return TT_COMMA;
+    if (c == '#') return TT_PRINT;
+
+    if ((c >= 9 && c <= 13) || (c == ' ')) return TT_FORMATTING;
+
+    fprintf(stderr, "Warning: Unclassified character '%c'.\n", c);
+    return TT_FORMATTING;
 }
 
-static char IsStartingIdentifierChar(char CH)
+
+void PushToken(token_t* iter, size_t line, token_type_t type, char* content)
 {
-    return (CH >= 'a' && CH <= 'z') || (CH >= 'A' && CH <= 'Z') || (CH == '_');
+    token_t new = malloc(sizeof(struct token_s));
+    new->line = line;
+    new->type = type;
+    new->content = strdup(content);
+
+    (*iter)->next = new;
+    (*iter)       = new;
+
+    new->next = NULL;
 }
 
-static char IsIdentifierChar(char CH)
+token_t DoLexicalAnalysis(FILE* fd)
 {
-    return (CH >= 'a' && CH <= 'z') || (CH >= 'A' && CH <= 'Z') || (CH >= '0' && CH <= '9') || (CH == '_') || (CH == '\'');
-}
+    struct token_s hook;
+    token_t iterator = &hook;
 
-static char IsEMDASOperator(char CH)
-{
-    return (CH == '*') || (CH == '/') || (CH == '+') || (CH == '-') || (CH == '^');
-}
 
-static char IsGreaterOrSmallerOperator(char CH)
-{
-    return (CH == '>') || (CH == '<');
-}
+    fseek(fd, 0, SEEK_END);
+    size_t size = ftell(fd);
+    fseek(fd, 0, SEEK_SET);
 
-static char IsNumericalDigit(char CH)
-{
-    return (CH >= '0' && CH <= '9');
-}
+    char* source = malloc(size);
+    fread(source, sizeof(char), size, fd);
 
-static char IsCommentStart(char CH)
-{
-    return (CH == '[');
-}
 
-lexical_token_t* NewToken(enum LexicalTokenType Type, char* Content, size_t Start, size_t End, size_t Line)
-{
-    lexical_token_t* Token = (lexical_token_t*)malloc(sizeof(lexical_token_t));
-    memset(Token, 0, sizeof(lexical_token_t));
-    Token->Type = Type;
-    Token->Content = Content;
-    Token->StartPos = Start;
-    Token->EndPos = End;
-    Token->Line = Line;
-    return Token;
-}
+    token_type_t old = TT_FORMATTING;
+    token_type_t new = TT_FORMATTING;
 
-linked_list_node_t* DoLexicalAnalysis(const char* InputText, size_t Line)
-{
-    size_t CurrPos = 0;
-    size_t SavePos = 0;
-    linked_list_node_t* TokenList = NULL;
+    char buffer[4096];
+    char* ptr = buffer;
+    bool comment = false;
 
-    while (CurrPos < strlen(InputText))
+    char c;
+    size_t line = 1;
+    for (int i = 0; c = source[i]; i++)
     {
-        if (IsWhitespaceChar(InputText[CurrPos]))
+        if (c == '\n') line++;
+
+        if (c == '[' ) comment = true;
+        if (c == '\n') comment = false;
+        if (comment) continue;
+
+        new = GetTokenType(c);
+        if (new != old)
         {
-            do
-            {
-                CurrPos++;
-            }
-            while (IsWhitespaceChar(InputText[CurrPos]));
+            if (old == TT_FORMATTING) goto skip;
+            *ptr = '\0';
+            PushToken(&iterator, line, old, buffer);
+        skip:
+            ptr = buffer;
         }
 
-        if (IsCommentStart(InputText[CurrPos]))
-        {
-            return TokenList;
-        }
-
-        if (IsStartingIdentifierChar(InputText[CurrPos]))
-        {
-            SavePos = CurrPos;
-            do
-            {
-                CurrPos++;
-            }
-            while (IsIdentifierChar(InputText[CurrPos]));
-            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
-            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* IdToken = NewToken(IDENTIFIER, Content, SavePos, CurrPos, Line);
-            TokenList = LinkedListAppend(TokenList, IdToken);
-        }
-
-        if (IsNumericalDigit(InputText[CurrPos]))
-        {
-            SavePos = CurrPos;
-            do
-            {
-                CurrPos++;
-            }
-            while (IsNumericalDigit(InputText[CurrPos]));
-            if (InputText[CurrPos] == '.')
-            {
-                do
-                {
-                    CurrPos++;
-                }
-                while (IsNumericalDigit(InputText[CurrPos]));
-            }
-            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
-            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* NumToken = NewToken(NUMBER, Content, SavePos, CurrPos, Line);
-            TokenList = LinkedListAppend(TokenList, NumToken);
-        }
-
-        if (InputText[CurrPos] == ';')
-        {
-            CurrPos++;
-            lexical_token_t* StmtEnderToken = NewToken(STATEMENT_DELIMITER, ";", CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, StmtEnderToken);
-        }
-
-        if (InputText[CurrPos] == '(')
-        {
-            CurrPos++;
-            lexical_token_t* LeftParen = NewToken(LEFT_PAREN, "(", CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, LeftParen);
-        }
-
-        if (InputText[CurrPos] == ')')
-        {
-            CurrPos++;
-            lexical_token_t* RightParen = NewToken(RIGHT_PAREN, ")", CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, RightParen);
-        }
-
-        if (InputText[CurrPos] == '#')
-        {
-            CurrPos++;
-            lexical_token_t* Hash = NewToken(PRINT, "#", CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, Hash);
-        }
-
-        if (IsEMDASOperator(InputText[CurrPos]))
-        {
-            char* Content = (char*)calloc(2, 1);
-            strncpy(Content, InputText + CurrPos, 1);
-            CurrPos++;
-            lexical_token_t* OpToken = NewToken(OPERATOR, Content, CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, OpToken);
-        }
-
-        if (InputText[CurrPos] == '=')
-        {
-            SavePos = CurrPos;
-            CurrPos++;
-            if (InputText[CurrPos] == '=')
-            {
-                CurrPos++;
-            }
-            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
-            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* OpToken = NewToken(OPERATOR, Content, SavePos, CurrPos, Line);
-            TokenList = LinkedListAppend(TokenList, OpToken);
-        }
-
-        if (IsGreaterOrSmallerOperator(InputText[CurrPos]))
-        {
-            SavePos = CurrPos;
-            CurrPos++;
-            if (InputText[CurrPos] == '=')
-            {
-                CurrPos++;
-            }
-            char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
-            strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-            lexical_token_t* OpToken = NewToken(OPERATOR, Content, SavePos, CurrPos, Line);
-            TokenList = LinkedListAppend(TokenList, OpToken);
-        }
-
-        if (InputText[CurrPos] == '!')
-        {
-            SavePos = CurrPos;
-            CurrPos++;
-            if (InputText[CurrPos] == '=')
-            {
-                CurrPos++;
-                char* Content = (char*)calloc(CurrPos - SavePos + 1, 1);
-                strncpy(Content, InputText + SavePos, CurrPos - SavePos);
-                lexical_token_t* OpToken = NewToken(OPERATOR, Content, SavePos, CurrPos, Line);
-                TokenList = LinkedListAppend(TokenList, OpToken);
-            }
-            else
-            {
-                fprintf(stderr, "[LEXER @ Line %lld Column %lld] error: expected '=' after '!' to form '!=' (NOT EQUAL) operator, got %c instead\n", Line, CurrPos, InputText[CurrPos]);
-                exit(-1);
-            }
-        }
-
-        if (InputText[CurrPos] == ',')
-        {
-            CurrPos++;
-            lexical_token_t* CommaToken = NewToken(COMMA, ",", CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, CommaToken);
-        }
-
-        if (InputText[CurrPos] == '{')
-        {
-            CurrPos++;
-            lexical_token_t* LeftBracket = NewToken(LEFT_BRACKET, "{", CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, LeftBracket);
-        }
-
-        if (InputText[CurrPos] == '}')
-        {
-            CurrPos++;
-            lexical_token_t* RightBracket = NewToken(RIGHT_BRACKET, "}", CurrPos-1, CurrPos-1, Line);
-            TokenList = LinkedListAppend(TokenList, RightBracket);
-        }
+        old = new;
+        *ptr++ = c; 
     }
-    return TokenList;
+
+    return hook.next;
 }
+
+

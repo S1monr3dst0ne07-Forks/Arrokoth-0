@@ -77,24 +77,11 @@ int main(int argc, char** argv)
     bool IsFromStdin = !strcmp(CompilerFlags.InputFile, "-");
     FILE* InputFd = IsFromStdin ? stdin : fopen(CompilerFlags.InputFile, "rb");
 
-    linked_list_node_t* Tokens = NULL;
+    if (!InputFd) error("Unable to open input file");
 
-    char Line[4096];
-    size_t LineC = 1;
-    while (fgets(Line, 4096, InputFd) != NULL)
-    {
-        if (Tokens)
-        {
-            linked_list_node_t* NewTokens = DoLexicalAnalysis(Line, LineC);
-            LinkedListAppendDirectly(Tokens, NewTokens);
-        }
-        else
-        {
-            Tokens = DoLexicalAnalysis(Line, LineC);
-        }
-        LineC++;
-    }
+    token_t stream = DoLexicalAnalysis(InputFd);
 
+    /*
     program_token_t* AST = DoParseAST(Tokens);
 
     if (CompilerFlags.GenerateAstGraph)
@@ -111,6 +98,7 @@ int main(int argc, char** argv)
     DoTreeTransform(AST);
     DoSemanticAnalyzation(AST);
     DoCodegen(CompilerFlags, AST);
+    */
 
     return 0;
 }
