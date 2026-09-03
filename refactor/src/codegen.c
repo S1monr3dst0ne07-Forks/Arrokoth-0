@@ -337,7 +337,7 @@ static void GenProgram(program_token_t* Prog)
     }
 }
 
-void DoCodegen(program_token_t* AST)
+void DoCodegen(compiler_params_t CompilerFlags, program_token_t* AST)
 {
     if (!strcmp(CompilerFlags.OutputFile, "-"))
     {

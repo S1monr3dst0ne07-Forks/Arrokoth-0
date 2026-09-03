@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ARROKOTH_AST_GRAPH_H
 
 #include <arrokoth-0/parser.h>
+#include <arrokoth-0/frontend.h>
 
-void GenerateAstGraph(program_token_t* AST);
+void GenerateAstGraph(compiler_params_t CompilerFlags, program_token_t* AST);
 
 #endif // ARROKOTH_AST_GRAPH_H

@@ -29,129 +29,59 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/semantic_analyzer.h>
 #include <arrokoth-0/codegen.h>
 
-#define I_ARG_HASH 5861499
-#define O_ARG_HASH 5861505
-#define A_ARG_HASH 5861491
-#define NTTA_ARG_HASH 210644999497
-
-compiler_flags_t CompilerFlags;
-
-// djb2 hash function (http://www.cse.yorku.ca/~oz/hash.html)
-static uint64_t Hash(const char* Str)
+void usage()
 {
-    uint64_t StartHash = 5381;
-    size_t N = 0;
-
-    while (Str[N])
-    {
-        StartHash = ((StartHash << 5) + StartHash) + Str[N];
-        N++;
-    }
-
-    return StartHash;
+    fprintf(stderr, "Usage: ./a.out -i <input> -o <output> [-a] [-ntta]\n");
+    exit(1);
 }
 
-static void ZeroFlags(compiler_flags_t* CF)
+void error(char* msg)
 {
-    CF->InputFile = NULL;
-    CF->OutputFile = NULL;
+    fprintf(stderr, "Error: %s.\n", msg);
+    usage();
 }
 
-static void CheckArgValidity(char** Argv, size_t Pos)
+void arg_error(char* before)
 {
-    if (!Argv[Pos])
-    {
-        fputs("error: unexpected end of cmd arg list", stderr);
-        exit(-1);
-    }
+    fprintf(stderr, "Error: Expected argument after '%s'.\n", before);
+    usage();
 }
 
-static void InputArg(char** Argv, size_t Pos)
-{
-    CheckArgValidity(Argv, Pos + 1);
-    if (CompilerFlags.InputFile)
-    {
-        fputs("error: '-i' is already set", stderr);
-        exit(-1);
-    }
-    CompilerFlags.InputFile = Argv[Pos + 1];
-}
-
-static void OutputArg(char** Argv, size_t Pos)
-{
-    CheckArgValidity(Argv, Pos + 1);
-    if (CompilerFlags.OutputFile)
-    {
-        fputs("error: '-o' is already set", stderr);
-        exit(-1);
-    }
-    CompilerFlags.OutputFile = Argv[Pos + 1];
-}
-
-static void AstArg()
-{
-    if (CompilerFlags.GenerateAstGraph)
-    {
-        fputs("error: '-a' or '-ntta' are already set", stderr);
-        exit(-1);
-    }
-    CompilerFlags.GenerateAstGraph = 1;
-}
-
-static void NttAstArg()
-{
-    if (CompilerFlags.GenerateAstGraph)
-    {
-        fputs("error: '-a' or '-ntta' are already set", stderr);
-        exit(-1);
-    }
-    if (CompilerFlags.GenerateAstGraphNTT)
-    {
-        fputs("error: '-ntta' is already set", stderr);
-        exit(-1);
-    }
-    CompilerFlags.GenerateAstGraph = 1;
-    CompilerFlags.GenerateAstGraphNTT = 1;
-}
 
 int main(int argc, char** argv)
 {
-    ZeroFlags(&CompilerFlags);
+    compiler_params_t CompilerFlags = {
+        .InputFile           = NULL,
+        .OutputFile          = NULL,
+        .GenerateAstGraph    = false,
+        .GenerateAstGraphNTT = false,
+    };
 
-    for (int N = 1; N < argc; N++)
+    #define READ_ARG ((n+1) < argc ? argv[++n] : (arg_error(argv[n]), NULL))
+
+    if (argc == 0) usage();
+
+    for (int n = 1; n < argc; n++)
     {
-        switch (Hash(argv[N]))
-        {
-            case I_ARG_HASH:
-                InputArg(argv, N);
-                break;
-            case O_ARG_HASH:
-                OutputArg(argv, N);
-                break;
-            case A_ARG_HASH:
-                AstArg();
-                break;
-            case NTTA_ARG_HASH:
-                NttAstArg();
-                break;
-        }
+        /**/ if (!strcmp(argv[n], "-i"))    CompilerFlags.InputFile = READ_ARG;
+        else if (!strcmp(argv[n], "-o"))    CompilerFlags.OutputFile = READ_ARG;
+        else if (!strcmp(argv[n], "-a"))    CompilerFlags.GenerateAstGraph = true;
+        else if (!strcmp(argv[n], "-ntta"))
+            CompilerFlags.GenerateAstGraph = 
+            CompilerFlags.GenerateAstGraphNTT = true;
     }
 
-    FILE* ToRead = NULL;
-    if (!strcmp(CompilerFlags.InputFile, "-"))
-    {
-        ToRead = stdin;
-    }
-    else
-    {
-        ToRead = fopen(CompilerFlags.InputFile, "rb");
-    }
+    if (!CompilerFlags.InputFile)  error("No input  file specified");
+    if (!CompilerFlags.OutputFile) error("No output file specified");
+
+    bool IsFromStdin = !strcmp(CompilerFlags.InputFile, "-");
+    FILE* InputFd = IsFromStdin ? stdin : fopen(CompilerFlags.InputFile, "rb");
 
     linked_list_node_t* Tokens = NULL;
 
     char Line[4096];
     size_t LineC = 1;
-    while (fgets(Line, 4096, ToRead) != NULL)
+    while (fgets(Line, 4096, InputFd) != NULL)
     {
         if (Tokens)
         {
@@ -174,13 +104,13 @@ int main(int argc, char** argv)
             DoTreeTransform(AST);
         }
         DoSemanticAnalyzation(AST);
-        GenerateAstGraph(AST);
+        GenerateAstGraph(CompilerFlags, AST);
         return 0;
     }
 
     DoTreeTransform(AST);
     DoSemanticAnalyzation(AST);
-    DoCodegen(AST);
+    DoCodegen(CompilerFlags, AST);
 
     return 0;
 }

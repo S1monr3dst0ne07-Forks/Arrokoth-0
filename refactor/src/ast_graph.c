@@ -358,9 +358,9 @@ static void CrawlProgram(program_token_t* Prog)
     }
 }
 
-void GenerateAstGraph(program_token_t* AST)
+void GenerateAstGraph(compiler_params_t CompilerFlags, program_token_t* AST)
 {
-    fputs(CompilerFlags.OutputFile, OutputFile);
+    //fputs(CompilerFlags.OutputFile, OutputFile);
     if (!strcmp(CompilerFlags.OutputFile, "-"))
     {
         OutputFile = stdout;

@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ARROKOTH_CODEGEN_H
 
 #include <arrokoth-0/parser.h>
+#include <arrokoth-0/frontend.h>
 
-void DoCodegen(program_token_t* AST);
+void DoCodegen(compiler_params_t CompilerFlags, program_token_t* AST);
 
 #endif // ARROKOTH_CODEGEN_H
