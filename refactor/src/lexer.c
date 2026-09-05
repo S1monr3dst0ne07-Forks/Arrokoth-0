@@ -131,6 +131,7 @@ token_t Lex(FILE* fd)
         *ptr++ = c; 
     }
 
+    free(source);
     return hook.next;
 }
 
@@ -180,4 +181,14 @@ void LexAssertType(token_t tok, token_type_t ref)
         );
 }
 
+void FreeStream(token_t stream)
+{
+    while (stream)
+    {
+        token_t next = stream->next; 
+        free(stream->content);
+        free(stream);
+        stream = next;
+    }
+}
 

@@ -63,5 +63,7 @@ void LexExpect(stream_t stream, const char* ref);
 bool LexCheck(stream_t stream, const char* ref);
 void LexAssertType(token_t tok, token_type_t ref);
 
+void FreeStream(token_t stream);
+
 
 #endif // ARROKOTH_LEXER_H

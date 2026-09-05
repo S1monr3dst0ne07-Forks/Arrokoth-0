@@ -78,9 +78,12 @@ int main(int argc, char** argv)
     token_t streamer = stream;
     node_program_t* root = ParseProg(&streamer);
 
-    if (params.graph)
-        Graph(params, root);
+    //if (params.graph)
+    //    Graph(params, root);
 
-    Codegen(params, root);
+    //Codegen(params, root);
+    
+    FreeStream(stream);
+    FreeRoot(root);
     return 0;
 }

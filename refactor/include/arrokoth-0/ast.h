@@ -3,6 +3,7 @@
 #define ARROKOTH_AST_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef struct
 {
@@ -124,5 +125,8 @@ typedef struct
     uint32_t vars_count;
 }
 node_program_t;
+
+
+void FreeRoot(node_program_t* node);
 
 #endif // ARROKOTH_AST_H
