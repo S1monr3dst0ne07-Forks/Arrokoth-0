@@ -22,8 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <arrokoth-0/linked_list.h>
-
 typedef enum token_type_e
 {
     TT_IDENTIFIER,

@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdbool.h>
 
 #include <arrokoth-0/lexer.h>
-#include <arrokoth-0/linked_list.h>
 
 const char* TokenTypeToStr(token_type_t tt)
 {
