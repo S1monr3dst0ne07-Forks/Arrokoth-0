@@ -60,6 +60,7 @@ static token_type_t GetTokenType(char c)
     if ((c == '*') || (c == '/') || (c == '+') || (c == '-') || (c == '^')) return TT_OPERATOR;
     if ((c == '>') || (c == '<')) return TT_OPERATOR;
     if (c == '=') return TT_OPERATOR;
+    if (c == '!') return TT_OPERATOR;
 
     if (c >= '0' && c <= '9') return TT_NUMBER;
 
