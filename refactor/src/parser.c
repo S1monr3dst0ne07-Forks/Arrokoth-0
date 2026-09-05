@@ -276,7 +276,7 @@ node_program_t* ParseProg(stream_t stream)
                 while (LexPeek(stream)->type != TT_STATEMENT_DELIMITER)
                 {
                     vars[vars_count++] = LexPop(stream)->content;
-                    if (LexPeek(stream)->type != TT_COMMA) LexPop(stream);
+                    if (LexPeek(stream)->type == TT_COMMA) LexPop(stream);
                 }
                 LexExpect(stream, ";");
             }
