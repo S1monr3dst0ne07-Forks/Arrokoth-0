@@ -24,333 +24,217 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/codegen.h>
 #include <arrokoth-0/frontend.h>
 
-static FILE* OutputFile = NULL;
-static size_t StatementNum = 0;
-static size_t ProcTempVar = 0;
+static void GenBlock(FILE* fd, node_block_t* node, node_program_t* root);
+static char* LoadExpr(FILE* fd, node_expr_t* node, node_program_t* root);
 
-static void GenWhileLoop(while_loop_token_t* WhileLoop);
-static void GenIfBranch(if_branch_token_t* IfBranch);
-static size_t GenBinOp(bin_op_token_t* BinOp);
-static size_t GenIdentifier(identifier_token_t* Id);
-static void GenAssignment(assignment_token_t* Assign);
-static void GenFunctionCall(function_token_t* Func);
-static void GenPrintVar(print_token_t* Print);
-static void GenProcCreation(proc_creation_token_t* Proc);
-static void GenVarCreation(var_creation_token_t* VarC);
-static void GenProgram(program_token_t* Prog);
-
-static size_t DispatchCall(token_wrapper_t TW)
+static char* FreshTemp()
 {
-    switch (TW.Type)
-    {
-        case VAR_CREATION:
-            GenVarCreation((var_creation_token_t*)TW.Data);
-            break;
-        case PROC_CREATION:
-            GenProcCreation((proc_creation_token_t*)TW.Data);
-            break;
-        case PRINT_VAR:
-            GenPrintVar((print_token_t*)TW.Data);
-            break;
-        case FUNCTION_TOKEN:
-            GenFunctionCall((function_token_t*)TW.Data);
-            break;
-        case ASSIGNMENT_TOKEN:
-            GenAssignment((assignment_token_t*)TW.Data);
-            break;
-        case IDENTIFIER_TOKEN:
-            return GenIdentifier((identifier_token_t*)TW.Data);
-        case BIN_OP:
-            return GenBinOp((bin_op_token_t*)TW.Data);
-        case IF_BRANCH:
-            GenIfBranch((if_branch_token_t*)TW.Data);
-            break;
-        case WHILE_LOOP:
-            GenWhileLoop((while_loop_token_t*)TW.Data);
-            break;
-        case NUMBER_TOKEN:
-        case BLOCK_TOKEN:
-        case STATEMENT_TOKEN:
-        case EXPRESSION:
-        case FACTOR:
-        case TERM:
-        case ATOM:
-        case PROGRAM_TOKEN:
-            break;
-    }
-    return SIZE_MAX;
+    static uint32_t count = 0;
+    char buffer[256];
+    sprintf(buffer, "%%tmp%d", count++);
+    return strdup(buffer);
+}
+static char* FreshLabel()
+{
+    static uint32_t count = 0;
+    char buffer[256];
+    sprintf(buffer, "_label_%d", count++);
+    return strdup(buffer);
 }
 
-static void GenWhileLoop(while_loop_token_t* WhileLoop)
+
+static char* LoadAtom(FILE* fd, node_atom_t* node, node_program_t* root)
 {
-    static size_t WhileNum = 0;
-    char LoopHeader[30] = {0};
-    char LoopBody[30] = {0};
-    char LoopExit[30] = {0};
-    snprintf(LoopHeader, 30, "_loop_header_%llu", WhileNum);
-    snprintf(LoopBody, 30, "_loop_body_%llu", WhileNum);
-    snprintf(LoopExit, 30, "_loop_exit_%llu", WhileNum);
-    WhileNum++;
-
-    fprintf(OutputFile, "br label %%%s\n%s:\n", LoopHeader, LoopHeader);
-
-    char Op1[20] = {0};
-    char Op2[20] = {0};
-
-    if (WhileLoop->L.Type == NUMBER_TOKEN)
+    char* target = FreshTemp();
+    switch(node->type)
     {
-        snprintf(Op1, 16, "%lf", ((number_token_t*)WhileLoop->L.Data)->Val);
-    }
-    else
-    {
-        snprintf(Op1, 16, "%%.%llu", DispatchCall(WhileLoop->L));
+        case T_ATOM_NUMBER: 
+            fprintf(fd, "%s = fadd double 0.0, %lf\n", target, node->number);
+            return target;
+
+        case T_ATOM_IDEN:
+            fprintf(fd, "%s = load double, ptr @%s\n", target, node->iden);
+            return target;
+
+        case T_ATOM_SUBEXPR:
+            free(target);
+            return LoadExpr(fd, node->expr, root);
+
     }
 
-    if (WhileLoop->R.Type == NUMBER_TOKEN)
-    {
-        snprintf(Op2, 16, "%lf", ((number_token_t*)WhileLoop->R.Data)->Val);
-    }
-    else
-    {
-        snprintf(Op2, 16, "%%.%llu", DispatchCall(WhileLoop->R));
-    }
-
-    size_t Self = ProcTempVar;
-    ProcTempVar++;
-
-    switch (WhileLoop->OpType)
-    {
-        case EQUAL: fprintf(OutputFile, "%%.%llu = fcmp oeq double %s, %s\n", Self, Op1, Op2); break;
-        case NOT_EQUAL: fprintf(OutputFile, "%%.%llu = fcmp one double %s, %s\n", Self, Op1, Op2); break;
-        case GREATER: fprintf(OutputFile, "%%.%llu = fcmp ogt double %s, %s\n", Self, Op1, Op2); break;
-        case LESSER: fprintf(OutputFile, "%%.%llu = fcmp olt double %s, %s\n", Self, Op1, Op2); break;
-        case GREATER_OR_EQ: fprintf(OutputFile, "%%.%llu = fcmp oge double %s, %s\n", Self, Op1, Op2); break;
-        case LESSER_OR_EQ: fprintf(OutputFile, "%%.%llu = fcmp ole double %s, %s\n", Self, Op1, Op2); break;
-    }
-
-    fprintf(OutputFile, "br i1 %%.%llu, label %%%s, label %%%s\n", Self, LoopBody, LoopExit);
-    fprintf(OutputFile, "%s:\n", LoopBody);
-
-    for (size_t N = 0; N < WhileLoop->Statements.CurrSize; N++)
-    {
-        DispatchCall(WhileLoop->Statements.List[N]);
-    }
-
-    fprintf(OutputFile, "br label %%%s\n", LoopHeader);
-    fprintf(OutputFile, "%s:\n", LoopExit);
+    return NULL;
 }
 
-static void GenIfBranch(if_branch_token_t* IfBranch)
+static char* LoadExpr(FILE* fd, node_expr_t* node, node_program_t* root)
 {
-    char Op1[20] = {0};
-    char Op2[20] = {0};
+    if (node->kind == T_EXPR_ATOM)
+        return LoadAtom(fd, node->leaf, root);
 
-    if (IfBranch->L.Type == NUMBER_TOKEN)
+    char* left  = LoadExpr(fd, node->left,  root);
+    char* right = LoadExpr(fd, node->right, root);
+    char* target = FreshTemp();
+
+    char* op;
+    switch (node->kind)
     {
-        snprintf(Op1, 16, "%lf", ((number_token_t*)IfBranch->L.Data)->Val);
-    }
-    else
-    {
-        snprintf(Op1, 16, "%%.%llu", DispatchCall(IfBranch->L));
-    }
+        case T_EXPR_ADD:   op = "fadd"; goto normal;
+        case T_EXPR_MINUS: op = "fsub"; goto normal;
+        case T_EXPR_MULT:  op = "fmul"; goto normal;
+        case T_EXPR_DIV:   op = "fdiv"; goto normal;
 
-    if (IfBranch->R.Type == NUMBER_TOKEN)
-    {
-        snprintf(Op2, 16, "%lf", ((number_token_t*)IfBranch->R.Data)->Val);
-    }
-    else
-    {
-        snprintf(Op2, 16, "%%.%llu", DispatchCall(IfBranch->R));
-    }
+        case T_EXPR_EQUAL:   op = "fcmp oeq"; goto normal;
+        case T_EXPR_UNEQUAL: op = "fcmp one"; goto normal;
+        case T_EXPR_LESSER:  op = "fcmp olt"; goto normal;
+        case T_EXPR_GREATER: op = "fcmp ogt"; goto normal;
+        case T_EXPR_LE:      op = "fcmp ole"; goto normal;
+        case T_EXPR_GE:      op = "fcmp oge"; goto normal;
 
-    size_t Self = ProcTempVar;
-    ProcTempVar++;
+        case T_EXPR_EXP:
+            fprintf(
+                fd, 
+                "%s = call double(double,double) @pow(double %s, double %s)\n", 
+                target, left, right
+            );
+            goto done;
 
-    switch (IfBranch->OpType)
-    {
-        case EQUAL: fprintf(OutputFile, "%%.%llu = fcmp oeq double %s, %s\n", Self, Op1, Op2); break;
-        case NOT_EQUAL: fprintf(OutputFile, "%%.%llu = fcmp one double %s, %s\n", Self, Op1, Op2); break;
-        case GREATER: fprintf(OutputFile, "%%.%llu = fcmp ogt double %s, %s\n", Self, Op1, Op2); break;
-        case LESSER: fprintf(OutputFile, "%%.%llu = fcmp olt double %s, %s\n", Self, Op1, Op2); break;
-        case GREATER_OR_EQ: fprintf(OutputFile, "%%.%llu = fcmp oge double %s, %s\n", Self, Op1, Op2); break;
-        case LESSER_OR_EQ: fprintf(OutputFile, "%%.%llu = fcmp ole double %s, %s\n", Self, Op1, Op2); break;
-    }
-
-    static size_t IfNum = 0;
-    char IfTrueLabel[30] = {0};
-    char IfFalseLabel[30] = {0};
-    snprintf(IfTrueLabel, 30, "_if_true_%llu", IfNum);
-    snprintf(IfFalseLabel, 30, "_if_false_%llu", IfNum);
-    IfNum++;
-
-    fprintf(OutputFile, "br i1 %%.%llu, label %%%s, label %%%s\n", Self, IfTrueLabel, IfFalseLabel);
-    fprintf(OutputFile, "%s:\n", IfTrueLabel);
-
-    for (size_t N = 0; N < IfBranch->Statements.CurrSize; N++)
-    {
-        DispatchCall(IfBranch->Statements.List[N]);
+        default:;
     }
 
-    fprintf(OutputFile, "br label %%%s\n", IfFalseLabel);
-    fprintf(OutputFile, "%s:\n", IfFalseLabel);
+normal:
+    fprintf(fd, "%s = %s double %s, %s\n", target, op, left, right);
+done:
+    free(left);
+    free(right);
+
+    return target;
 }
 
-static size_t GenBinOp(bin_op_token_t* BinOp)
+
+
+static void GenWhile(FILE* fd, node_while_t* node, node_program_t* root)
 {
-    char Op1[20] = {0};
-    char Op2[20] = {0};
+    char* cond_label = FreshLabel();
+    fprintf(fd, "br label %%%s\n", cond_label);
 
-    if (BinOp->L.Type == NUMBER_TOKEN)
-    {
-        snprintf(Op1, 16, "%lf", ((number_token_t*)BinOp->L.Data)->Val);
-    }
-    else
-    {
-        snprintf(Op1, 16, "%%.%llu", DispatchCall(BinOp->L));
-    }
+    char* body_label = FreshLabel();
+    char* done_label = FreshLabel();
 
-    if (BinOp->R.Type == NUMBER_TOKEN)
-    {
-        snprintf(Op2, 16, "%lf", ((number_token_t*)BinOp->R.Data)->Val);
-    }
-    else
-    {
-        snprintf(Op2, 16, "%%.%llu", DispatchCall(BinOp->R));
-    }
+    fprintf(fd, "%s:\n", cond_label);
+    char* cond_result = LoadExpr(fd, node->condition, root);
+    fprintf(fd, "br i1 %s, label %%%s, label %%%s\n", cond_result, body_label, done_label);
 
-    size_t Self = ProcTempVar;
-    ProcTempVar++;
+    fprintf(fd, "%s:\n", body_label);
+    GenBlock(fd, node->body, root);
 
-    switch (BinOp->Operator)
-    {
-        case PLUS:
-            fprintf(OutputFile, "%%.%llu = fadd double %s, %s\n", Self, Op1, Op2);
-            break;
-        case MINUS:
-            fprintf(OutputFile, "%%.%llu = fsub double %s, %s\n", Self, Op1, Op2);
-            break;
-        case MULT:
-            fprintf(OutputFile, "%%.%llu = fmul double %s, %s\n", Self, Op1, Op2);
-            break;
-        case DIV:
-            fprintf(OutputFile, "%%.%llu = fdiv double %s, %s\n", Self, Op1, Op2);
-            break;
-        case EXP:
-            fprintf(OutputFile, "%%.%llu = call double (double, double) @pow(double %s, double %s)\n", Self, Op1, Op2);
-            break;
-    }
-
-    return Self;
+    fprintf(fd, "br label %%%s\n", cond_label);
+    fprintf(fd, "%s:\n", done_label);
 }
 
-static size_t GenIdentifier(identifier_token_t* Id)
+static void GenIf(FILE* fd, node_if_t* node, node_program_t* root)
 {
-    size_t Self = ProcTempVar;
-    ProcTempVar++;
-    fprintf(OutputFile, "%%.%llu = load double, ptr @%s\n", Self, Id->Text);
-    return Self;
+    char* true_label  = FreshLabel();
+    char* false_label = FreshLabel();
+
+    char* cond_result = LoadExpr(fd, node->condition, root);
+
+    fprintf(fd, "br i1 %s, label %%%s, label %%%s\n", cond_result, true_label, false_label);
+    fprintf(fd, "%s:\n", true_label);
+
+    GenBlock(fd, node->body, root);
+
+    fprintf(fd, "br label %%%s\n", false_label);
+    fprintf(fd, "%s:\n", false_label);
 }
 
-static void GenAssignment(assignment_token_t* Assign)
+
+
+
+static void GenAssign(FILE* fd, node_assign_t* node, node_program_t* root)
 {
-    char* Var = ((identifier_token_t*)Assign->Name.Data)->Text;
-    if (Assign->Val.Type == NUMBER_TOKEN)
+    char* source = LoadExpr(fd, node->source, root);
+    fprintf(fd, "store double %s, ptr @%s\n", source, node->destination);
+}
+
+static void GenCall(FILE* fd, node_call_t* node, node_program_t* root)
+{
+    fprintf(fd, "call void @%s()\n", node->target);
+}
+
+
+
+
+static void GenPrint(FILE* fd, node_print_t* node, node_program_t* root)
+{
+    char* tmp = LoadExpr(fd, node->target, root);
+    fprintf(
+        fd, 
+        "call i32 (ptr,...) @printf(ptr @FORMATSTR, double %s)\n", 
+        tmp
+    );
+    free(tmp);
+}
+
+static void GenStmt(FILE* fd, node_statement_t* node, node_program_t* root)
+{
+    switch (node->type)
     {
-        double Num = ((number_token_t*)Assign->Val.Data)->Val;
-        fprintf(OutputFile, "store double %lf, ptr @%s\n", Num, Var);
-    }
-    else
-    {
-        fprintf(OutputFile, "store double %%.%llu, ptr @%s\n", DispatchCall(Assign->Val), Var);
+        case T_STMT_ASSIGN: GenAssign(fd, node->content, root); break;
+        case T_STMT_CALL:   GenCall  (fd, node->content, root); break;
+        case T_STMT_WHILE:  GenWhile (fd, node->content, root); break;
+        case T_STMT_IF:     GenIf    (fd, node->content, root); break;
+        case T_STMT_PRINT:  GenPrint (fd, node->content, root); break;
     }
 }
 
-static void GenFunctionCall(function_token_t* Func)
+static void GenBlock(FILE* fd, node_block_t* node, node_program_t* root)
 {
-    identifier_token_t* ID = (identifier_token_t*)Func->FuncName.Data;
-    fprintf(OutputFile, "call void @%s()\n", ID->Text);
+    for (size_t i = 0; i < node->size; i++)
+        GenStmt(fd, node->content[i], root);
 }
 
-static void GenPrintVar(print_token_t* Print)
+static void GenProc(FILE* fd, node_proc_t* node, node_program_t* root)
 {
-    for (size_t N = 0; N < Print->Ids.CurrSize; N++)
-    {
-        identifier_token_t* ID = (identifier_token_t*)Print->Ids.List[N].Data;
-        fprintf(OutputFile, "%%.%llu = load double, ptr @%s\n", ProcTempVar, ID->Text);
-        ProcTempVar++;
-        fprintf(OutputFile, "call i32 (ptr,...) @printf(ptr @FORMATSTR, double %%.%llu)\n", ProcTempVar - 1);
-    }
+    bool isMain = !strcmp(node->name, "main");
+
+    fprintf(
+        fd, 
+        isMain ? "define i32 @%s()\n{\n" : "define void @%s()\n{\n",
+        node->name
+    );
+
+    GenBlock(fd, node->body, root);
+
+    fprintf(
+        fd, 
+        isMain ? "ret i32 0\n}\n" : "ret void \n}\n"
+    );
 }
 
-static void GenProcCreation(proc_creation_token_t* Proc)
+
+static void GenProg(FILE* fd, node_program_t* prog)
 {
-    identifier_token_t* ProcName = (identifier_token_t*)Proc->Name.Data;
+    fprintf(fd, "@FORMATSTR = private constant [5 x i8] c\"%%lf\\0A\\00\"\n");
+    fprintf(fd, "declare i32 @printf(ptr, ...)\n");
+    fprintf(fd, "declare double @pow(double, double)\n\n");
 
-    if (!strcmp(ProcName->Text, "main"))
-    {
-        fprintf(OutputFile, "define i32 @%s()\n{\n", ProcName->Text);
-    }
-    else
-    {
-        fprintf(OutputFile, "define void @%s()\n{\n", ProcName->Text);
-    }
+    for (size_t i = 0; i < prog->vars_count; i++)
+        fprintf(fd, "@%s = global double 0.0\n", prog->vars[i]);
+    fprintf(fd, "\n");
 
-    ProcTempVar = 0;
-    StatementNum = 0;
-    for (size_t N = 0; N < Proc->Statements.CurrSize; N++)
-    {
-        DispatchCall(Proc->Statements.List[N]);
-        StatementNum++;
-    }
-    ProcTempVar = 0;
-    StatementNum = 0;
+    for (size_t i = 0; i < prog->procs_count; i++)
+        GenProc(fd, prog->procs[i], prog);
 
-    if (!strcmp(ProcName->Text, "main"))
-    {
-        fputs("ret i32 0\n}\n", OutputFile);
-    }
-    else
-    {
-        fputs("ret void\n}\n", OutputFile);
-    }
 }
 
-static void GenVarCreation(var_creation_token_t* VarC)
+void DoCodegen(compiler_params_t CompilerFlags, node_program_t* root)
 {
-    for (size_t N = 0; N < VarC->Children.CurrSize; N++)
-    {
-        identifier_token_t* ID = (identifier_token_t*)VarC->Children.List[N].Data;
-        fprintf(OutputFile, "@%s = global double 0.0\n", ID->Text);
-    }
-    fputs("\n", OutputFile);
-}
+    char outputPath[256];
+    sprintf(outputPath, "%s.ll", CompilerFlags.OutputFile);
 
-static void GenProgram(program_token_t* Prog)
-{
-    fputs("@FORMATSTR = private constant [5 x i8] c\"%lf\\0A\\00\"\n", OutputFile);
-    fputs("declare i32 @printf(ptr,...)\n", OutputFile);
-    fputs("declare double @pow(double,double)\n\n", OutputFile);
+    bool isStdout = !strcmp(CompilerFlags.OutputFile, "-");
+    FILE* fd  = isStdout ? stdout : fopen(outputPath, "w");
 
-    for (size_t N = 0; N < Prog->Blocks.CurrSize; N++)
-    {
-        DispatchCall(Prog->Blocks.List[N]);
-    }
-}
+    GenProg(fd, root);
 
-void DoCodegen(compiler_params_t CompilerFlags, program_token_t* AST)
-{
-    if (!strcmp(CompilerFlags.OutputFile, "-"))
-    {
-        OutputFile = stdout;
-    }
-    else
-    {
-        char* OutputName = (char*)malloc(strlen(CompilerFlags.OutputFile) + 5);
-        snprintf(OutputName, strlen(CompilerFlags.OutputFile) + 4, "%s.ll", CompilerFlags.OutputFile);
-        OutputFile = fopen(OutputName, "wt");
-    }
-
-    GenProgram(AST);
-
-    fclose(OutputFile);
+    fclose(fd);
 }
