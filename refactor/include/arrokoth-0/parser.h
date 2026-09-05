@@ -43,7 +43,7 @@ node_atom_t;
 
 typedef struct node_expr_s
 {
-    enum {
+    enum type_expr_e {
         T_EXPR_ADD,
         T_EXPR_MINUS,
         T_EXPR_MULT,
@@ -72,26 +72,15 @@ node_expr_t;
 
 typedef struct
 {
-    enum {
-        T_STMT_PROGRAM_TOKEN,
-        T_STMT_STATEMENT_TOKEN,
-        T_STMT_ASSIGNMENT_TOKEN,
-        T_STMT_FUNCTION_TOKEN,
-        T_STMT_EXPRESSION,
-        T_STMT_BIN_OP,
-        T_STMT_TERM,
-        T_STMT_FACTOR,
-        T_STMT_ATOM,
-        T_STMT_IDENTIFIER_TOKEN,
-        T_STMT_NUMBER_TOKEN,
-        T_STMT_BLOCK_TOKEN,
-        T_STMT_VAR_CREATION,
-        T_STMT_PROC_CREATION,
-        T_STMT_WHILE_LOOP,
-        T_STMT_IF_BRANCH,
-        T_STMT_PRINT_VAR
-    } type;
     void* content;
+
+    enum {
+        T_STMT_ASSIGN,
+        T_STMT_CALL,
+        T_STMT_WHILE,
+        T_STMT_IF,
+        T_STMT_PRINT,
+    } type;
 }
 node_statement_t;
 
@@ -113,7 +102,7 @@ node_call_t;
 
 typedef struct
 {
-    node_statement_t* content;
+    node_statement_t** content;
     uint32_t size;
 }
 node_block_t;
@@ -127,18 +116,18 @@ typedef struct
 }
 node_while_t;
 
-typedef struct if_branch_token_s
+typedef struct
 {
     node_expr_t* condition;
     node_block_t* body;
 }
 node_if_t;
 
-typedef struct print_token_s
+typedef struct
 {
     node_expr_t* target;
 }
-print_token_t;
+node_print_t;
 
 typedef struct
 {
@@ -149,12 +138,14 @@ node_proc_t;
 
 typedef struct 
 {
-    char* vars[4096];
-    node_proc_t* procs;
-    uint32_t proc_count;
+    node_proc_t** procs;
+    uint32_t procs_count;
+
+    char** vars;
+    uint32_t vars_count;
 }
 node_program_t;
 
-node_program_t* DoParseAST(linked_list_node_t* LexTokens);
+node_program_t* ParseProg(stream_t stream);
 
 #endif // ARROKOTH_PARSER_H

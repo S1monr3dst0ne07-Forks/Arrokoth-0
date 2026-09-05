@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ARROKOTH_LEXER_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <arrokoth-0/linked_list.h>
 
@@ -49,7 +50,20 @@ typedef struct token_s
 }
 *token_t;
 
+// Global var, fight me
+// *fights you* >:3
+//linked_list_node_t* TokenList = NULL;
+typedef token_t* stream_t;
+
+
 const char* TokenTypeToStr(token_type_t tt);
 token_t DoLexicalAnalysis(FILE* fd);
+
+token_t LexPop(stream_t stream);
+token_t LexPeek(stream_t stream);
+void LexExpect(stream_t stream, const char* ref);
+bool LexCheck(stream_t stream, const char* ref);
+void LexAssertType(token_t tok, token_type_t ref);
+
 
 #endif // ARROKOTH_LEXER_H

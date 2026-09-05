@@ -24,10 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/frontend.h>
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/parser.h>
-#include <arrokoth-0/tree_transform.h>
-#include <arrokoth-0/ast_graph.h>
-#include <arrokoth-0/semantic_analyzer.h>
-#include <arrokoth-0/codegen.h>
+//#include <arrokoth-0/tree_transform.h>
+//#include <arrokoth-0/ast_graph.h>
+//#include <arrokoth-0/semantic_analyzer.h>
+//#include <arrokoth-0/codegen.h>
 
 void usage()
 {
@@ -80,16 +80,10 @@ int main(int argc, char** argv)
     if (!InputFd) error("Unable to open input file");
 
     token_t stream = DoLexicalAnalysis(InputFd);
-
-    while (stream)
-    {
-        printf("%s\n", stream->content);
-        stream = stream->next;
-    }
+    token_t streamer = stream;
+    node_program_t* root = ParseProg(&streamer);
 
     /*
-    program_token_t* AST = DoParseAST(Tokens);
-
     if (CompilerFlags.GenerateAstGraph)
     {
         if (!CompilerFlags.GenerateAstGraphNTT)

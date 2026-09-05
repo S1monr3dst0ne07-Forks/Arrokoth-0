@@ -25,7 +25,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/linked_list.h>
 
-token_type_t GetTokenType(char c)
+const char* TokenTypeToStr(token_type_t tt)
+{
+    switch (tt)
+    {
+        case TT_IDENTIFIER:          return "IDENTIFIER";
+        case TT_STATEMENT_DELIMITER: return "STATEMENT_DELIMITER";
+        case TT_LEFT_PAREN:          return "LEFT PAREN";
+        case TT_RIGHT_PAREN:         return "RIGHT PAREN";
+        case TT_OPERATOR:            return "OPERATOR";
+        case TT_NUMBER:              return "NUMBER";
+        case TT_COMMA:               return "COMMA";
+        case TT_LEFT_BRACKET:        return "LEFT BRACKET";
+        case TT_RIGHT_BRACKET:       return "RIGHT BRACKET";
+        case TT_PRINT:               return "PRINT";
+        default:                     return "<INVALID TOKEN TYPE>";
+    }
+}
+
+static token_type_t GetTokenType(char c)
 {
     if (c >= 'a' && c <= 'z') return TT_IDENTIFIER;
     if (c >= 'A' && c <= 'Z') return TT_IDENTIFIER;
@@ -55,7 +73,7 @@ token_type_t GetTokenType(char c)
 }
 
 
-void PushToken(token_t* iter, size_t line, token_type_t type, char* content)
+static void PushToken(token_t* iter, size_t line, token_type_t type, char* content)
 {
     token_t new = malloc(sizeof(struct token_s));
     new->line = line;
@@ -114,6 +132,52 @@ token_t DoLexicalAnalysis(FILE* fd)
     }
 
     return hook.next;
+}
+
+
+token_t LexPop(stream_t stream)
+{
+    token_t curr = *stream;
+    *stream = curr->next;
+    return curr;
+}
+token_t LexPeek(stream_t stream)
+{
+    return *stream;
+}
+
+static void TokenError(const char* T1, const char* T2, size_t Line)
+{
+    fprintf(
+        stderr, 
+        "Error at line %zu: Expected '%s', got '%s' instead\n", 
+        Line, 
+        T1,
+        T2
+    );
+    exit(1);
+}
+
+void LexExpect(stream_t stream, const char* ref)
+{
+    token_t tok = LexPop(stream);
+
+    if (strcmp(tok->content, ref))
+        TokenError(tok->content, ref, tok->line);
+}
+bool LexCheck(stream_t stream, const char* ref)
+{
+    token_t tok = LexPeek(stream);
+    return !strcmp(tok->content, ref);
+}
+void LexAssertType(token_t tok, token_type_t ref)
+{
+    if (tok->type != ref) 
+        TokenError(
+            TokenTypeToStr(ref), 
+            TokenTypeToStr(tok->type),
+            tok->line
+        );
 }
 
 
