@@ -222,7 +222,7 @@ static node_statement_t* ParseStmt(stream_t stream)
 
 static node_block_t* ParseBlock(stream_t stream)
 {
-    static node_statement_t* buffer[4096];
+    node_statement_t* buffer[4096];
     uint32_t size = 0;
 
     LexExpect(stream, "{");
@@ -256,7 +256,7 @@ static node_proc_t* ParseProc(stream_t stream)
 
 node_program_t* ParseProg(stream_t stream)
 {
-    static node_proc_t* procs_buffer[4096];
+    node_proc_t* procs_buffer[4096];
     uint32_t procs_count = 0;
 
     char** vars = malloc(4096);
