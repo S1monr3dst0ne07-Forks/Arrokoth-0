@@ -292,9 +292,10 @@ node_program_t* ParseProg(stream_t stream)
 
     node_program_t* prog = malloc(sizeof(node_program_t));
 
-    prog->procs = malloc(procs_count);
+    size_t procs_buffer_size = sizeof(node_proc_t) * procs_count;
+    prog->procs = malloc(procs_buffer_size);
     prog->procs_count = procs_count;
-    memcpy(prog->procs, procs_buffer, procs_count);
+    memcpy(prog->procs, procs_buffer, procs_buffer_size);
 
     prog->vars = vars; 
     prog->vars_count = vars_count;

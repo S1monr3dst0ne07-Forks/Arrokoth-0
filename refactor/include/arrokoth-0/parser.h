@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdint.h>
 
 #include <arrokoth-0/linked_list.h>
+#include <arrokoth-0/lexer.h>
 
 
 
