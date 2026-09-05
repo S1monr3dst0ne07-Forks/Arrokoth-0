@@ -226,12 +226,12 @@ static void GenProg(FILE* fd, node_program_t* prog)
 
 }
 
-void DoCodegen(compiler_params_t CompilerFlags, node_program_t* root)
+void Codegen(compiler_params_t params, node_program_t* root)
 {
     char outputPath[256];
-    sprintf(outputPath, "%s.ll", CompilerFlags.OutputFile);
+    sprintf(outputPath, "%s.ll", params.outputFile);
 
-    bool isStdout = !strcmp(CompilerFlags.OutputFile, "-");
+    bool isStdout = !strcmp(params.outputFile, "-");
     FILE* fd  = isStdout ? stdout : fopen(outputPath, "w");
 
     GenProg(fd, root);

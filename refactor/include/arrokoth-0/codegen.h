@@ -22,6 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/parser.h>
 #include <arrokoth-0/frontend.h>
 
-void DoCodegen(compiler_params_t CompilerFlags, node_program_t* root);
+void Codegen(compiler_params_t params, node_program_t* root);
 
 #endif // ARROKOTH_CODEGEN_H

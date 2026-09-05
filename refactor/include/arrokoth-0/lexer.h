@@ -57,7 +57,7 @@ typedef token_t* stream_t;
 
 
 const char* TokenTypeToStr(token_type_t tt);
-token_t DoLexicalAnalysis(FILE* fd);
+token_t Lex(FILE* fd);
 
 token_t LexPop(stream_t stream);
 token_t LexPeek(stream_t stream);

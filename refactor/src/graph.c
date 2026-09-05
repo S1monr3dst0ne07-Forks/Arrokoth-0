@@ -246,12 +246,12 @@ static void GraphProg(FILE* fd, node_program_t* root)
     }
 }
 
-void GenerateAstGraph(volatile compiler_params_t CompilerFlags, node_program_t* root)
+void Graph(compiler_params_t params, node_program_t* root)
 {
     char outputPath[256];
-    sprintf(outputPath, "%s.dot", CompilerFlags.OutputFile);
+    sprintf(outputPath, "%s.dot", params.outputFile);
 
-    bool isStdout = !strcmp(CompilerFlags.OutputFile, "-");
+    bool isStdout = !strcmp(params.outputFile, "-");
     FILE* fd  = isStdout ? stdout : fopen(outputPath, "w");
 
     fprintf(fd, "digraph\n{\n");

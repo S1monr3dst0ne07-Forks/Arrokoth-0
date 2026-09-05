@@ -87,7 +87,7 @@ static void PushToken(token_t* iter, size_t line, token_type_t type, char* conte
     new->next = NULL;
 }
 
-token_t DoLexicalAnalysis(FILE* fd)
+token_t Lex(FILE* fd)
 {
     struct token_s hook;
     token_t iterator = &hook;

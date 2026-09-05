@@ -82,7 +82,7 @@ node_call_t;
 typedef struct
 {
     node_statement_t** content;
-    uint32_t size;
+    size_t size;
 }
 node_block_t;
 

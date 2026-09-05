@@ -23,9 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 typedef struct compiler_params_s
 {
-    char* InputFile;
-    char* OutputFile;
-    bool GenerateAstGraph;
+    char* inputFile;
+    char* outputFile;
+    bool graph;
 }
 compiler_params_t;
 

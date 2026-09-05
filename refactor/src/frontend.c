@@ -25,9 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/parser.h>
 #include <arrokoth-0/graph.h>
+#include <arrokoth-0/codegen.h>
 
 //#include <arrokoth-0/semantic_analyzer.h>
-//#include <arrokoth-0/codegen.h>
 
 void usage()
 {
@@ -50,44 +50,37 @@ void arg_error(char* before)
 
 int main(int argc, char** argv)
 {
-    compiler_params_t CompilerFlags = {
-        .InputFile           = NULL,
-        .OutputFile          = NULL,
-        .GenerateAstGraph    = false,
+    if (argc == 0) usage();
+
+    compiler_params_t params = {
+        .inputFile           = NULL,
+        .outputFile          = NULL,
+        .graph               = false,
     };
 
     #define READ_ARG ((n+1) < argc ? argv[++n] : (arg_error(argv[n]), NULL))
-
-    if (argc == 0) usage();
-
     for (int n = 1; n < argc; n++)
     {
-        /**/ if (!strcmp(argv[n], "-i"))    CompilerFlags.InputFile = READ_ARG;
-        else if (!strcmp(argv[n], "-o"))    CompilerFlags.OutputFile = READ_ARG;
-        else if (!strcmp(argv[n], "-a"))    CompilerFlags.GenerateAstGraph = true;
+        /**/ if (!strcmp(argv[n], "-i"))    params.inputFile  = READ_ARG;
+        else if (!strcmp(argv[n], "-o"))    params.outputFile = READ_ARG;
+        else if (!strcmp(argv[n], "-a"))    params.graph      = true;
     }
 
-    if (!CompilerFlags.InputFile)  error("No input  file specified");
-    if (!CompilerFlags.OutputFile) error("No output file specified");
+    if (!params.inputFile)  error("No input  file specified");
+    if (!params.outputFile) error("No output file specified");
 
-    bool IsFromStdin = !strcmp(CompilerFlags.InputFile, "-");
-    FILE* InputFd = IsFromStdin ? stdin : fopen(CompilerFlags.InputFile, "rb");
+    bool isStdin = !strcmp(params.inputFile, "-");
+    FILE* fd = isStdin ? stdin : fopen(params.inputFile, "r");
 
-    if (!InputFd) error("Unable to open input file");
+    if (!fd) error("Unable to open input file");
 
-    token_t stream = DoLexicalAnalysis(InputFd);
+    token_t stream = Lex(fd);
     token_t streamer = stream;
     node_program_t* root = ParseProg(&streamer);
 
-    if (CompilerFlags.GenerateAstGraph)
-    {
-        GenerateAstGraph(CompilerFlags, root);
-        return 0;
-    }
+    if (params.graph)
+        Graph(params, root);
 
-    /*
-    DoCodegen(CompilerFlags, AST);
-    */
-
+    Codegen(params, root);
     return 0;
 }
