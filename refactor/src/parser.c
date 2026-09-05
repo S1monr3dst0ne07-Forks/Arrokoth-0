@@ -105,9 +105,11 @@ node_atom_t* ParseAtom(stream_t stream)
             node->type = T_ATOM_NUMBER;
             node->number = ParseNumber(stream);
             break;
-        case TT_RIGHT_PAREN:
+        case TT_LEFT_PAREN:
+            LexExpect(stream, "(");
             node->type = T_ATOM_SUBEXPR;
             node->expr = ParseExpr(stream);
+            LexExpect(stream, ")");
             break;
         default:
             fprintf(
