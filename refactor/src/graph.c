@@ -206,7 +206,7 @@ static char* GraphBlock(FILE* fd, node_block_t* block)
     char blockName[256];
     sprintf(blockName, "block%zu", blockNum++);
 
-    fprintf(fd, "%s [label=Block,fillcolor=gray10,style=filled,fontcolor=white]\n", blockName);
+    fprintf(fd, "%s [label=block,fillcolor=gray10,style=filled,fontcolor=white]\n", blockName);
 
     for (size_t n = 0; n < block->size; n++)
     {
@@ -224,8 +224,9 @@ static char* GraphProc(FILE* fd, node_proc_t* proc)
     sprintf(procName, "\"proc(%s)%zu\"", proc->name, procNum++);
     fprintf(
         fd, 
-        "%s [label=\"Procedure Creation\",fillcolor=purple,style=filled,fontcolor=white]\n", 
-        procName
+        "%s [label=\"procedure(%s)\",fillcolor=purple,style=filled,fontcolor=white]\n", 
+        procName,
+        proc->name
     );
 
     char* target = GraphBlock(fd, proc->body);
@@ -236,7 +237,7 @@ static char* GraphProc(FILE* fd, node_proc_t* proc)
 
 static void GraphProg(FILE* fd, node_program_t* root)
 {
-    fprintf(fd, "PROG [label=Program,fillcolor=red,style=filled]\n");
+    fprintf(fd, "PROG [label=program,fillcolor=red,style=filled]\n");
     for (size_t n = 0; n < root->procs_count; n++)
     {
         char* target = GraphProc(fd, root->procs[n]);
