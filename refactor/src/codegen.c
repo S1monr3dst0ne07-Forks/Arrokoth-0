@@ -42,6 +42,29 @@ static char* FreshLabel()
     return strdup(buffer);
 }
 
+static void CheckError(const char* format, char* name)
+{
+    fprintf(stderr, format, name);
+    exit(1);
+}
+
+static void CheckProc(node_program_t* root, char* proc_name)
+{
+    for (size_t i = 0; i < root->procs_count; i++)
+        if (!strcmp(root->procs[i]->name, proc_name))
+            return;
+
+    CheckError("Error: Procedure '%s' does not exist\n", proc_name);
+}
+static void CheckVar(node_program_t* root, char* var_name)
+{
+    for (size_t i = 0; i < root->vars_count; i++)
+        if (!strcmp(root->vars[i], var_name))
+            return;
+
+    CheckError("Error: Variable '%s' does not exist\n", var_name);
+}
+
 
 static char* LoadAtom(FILE* fd, node_atom_t* node, node_program_t* root)
 {
@@ -53,6 +76,7 @@ static char* LoadAtom(FILE* fd, node_atom_t* node, node_program_t* root)
             return target;
 
         case T_ATOM_IDEN:
+            CheckVar(root, node->iden);
             fprintf(fd, "%s = load double, ptr @%s\n", target, node->iden);
             return target;
 
@@ -151,12 +175,15 @@ static void GenIf(FILE* fd, node_if_t* node, node_program_t* root)
 
 static void GenAssign(FILE* fd, node_assign_t* node, node_program_t* root)
 {
+    CheckVar(root, node->destination);
+
     char* source = LoadExpr(fd, node->source, root);
     fprintf(fd, "store double %s, ptr @%s\n", source, node->destination);
 }
 
 static void GenCall(FILE* fd, node_call_t* node, node_program_t* root)
 {
+    CheckProc(root, node->target);
     fprintf(fd, "call void @%s()\n", node->target);
 }
 
@@ -213,6 +240,8 @@ static void GenProc(FILE* fd, node_proc_t* node, node_program_t* root)
 
 static void GenProg(FILE* fd, node_program_t* prog)
 {
+    CheckProc(prog, "main");
+
     fprintf(fd, "@FORMATSTR = private constant [5 x i8] c\"%%lf\\0A\\00\"\n");
     fprintf(fd, "declare i32 @printf(ptr, ...)\n");
     fprintf(fd, "declare double @pow(double, double)\n\n");
