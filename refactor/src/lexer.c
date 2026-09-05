@@ -107,10 +107,10 @@ token_t DoLexicalAnalysis(FILE* fd)
     char* ptr = buffer;
     bool comment = false;
 
-    char c;
     size_t line = 1;
-    for (int i = 0; (c = source[i]); i++)
+    for (size_t i = 0; i < size; i++)
     {
+        char c = source[i];
         if (c == '\n') line++;
 
         if (c == '[' ) comment = true;
