@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/parser.h>
+#include <arrokoth-0/ast.h>
 
 static node_expr_t* ParseExpr(stream_t stream);
 static node_block_t* ParseBlock(stream_t stream);

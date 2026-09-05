@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/graph.h>
 #include <arrokoth-0/parser.h>
 #include <arrokoth-0/frontend.h>
+#include <arrokoth-0/ast.h>
 
 static char* GraphExpr(FILE* fd, node_expr_t* expr);
 static char* GraphBlock(FILE* fd, node_block_t* block);
