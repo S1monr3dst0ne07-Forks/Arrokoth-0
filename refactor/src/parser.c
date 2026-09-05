@@ -126,7 +126,7 @@ static node_expr_t* ParseExprMain(stream_t stream, uint32_t level)
     if (level == 4) 
     {
         node_expr_t* node = malloc(sizeof(node_expr_t));
-        node->kind = T_EXPR_ATOM;
+        node->type = T_EXPR_ATOM;
         node->leaf = ParseAtom(stream);
         return node;
     }
@@ -141,7 +141,7 @@ static node_expr_t* ParseExprMain(stream_t stream, uint32_t level)
     node_expr_t* right = ParseExprMain(stream, level);
 
     node_expr_t* node = malloc(sizeof(node_expr_t));
-    node->kind = op;
+    node->type = op;
     node->left  = left;
     node->right = right;
     return node;

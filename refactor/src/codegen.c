@@ -67,7 +67,7 @@ static char* LoadAtom(FILE* fd, node_atom_t* node, node_program_t* root)
 
 static char* LoadExpr(FILE* fd, node_expr_t* node, node_program_t* root)
 {
-    if (node->kind == T_EXPR_ATOM)
+    if (node->type == T_EXPR_ATOM)
         return LoadAtom(fd, node->leaf, root);
 
     char* left  = LoadExpr(fd, node->left,  root);
@@ -75,7 +75,7 @@ static char* LoadExpr(FILE* fd, node_expr_t* node, node_program_t* root)
     char* target = FreshTemp();
 
     char* op;
-    switch (node->kind)
+    switch (node->type)
     {
         case T_EXPR_ADD:   op = "fadd"; goto normal;
         case T_EXPR_MINUS: op = "fsub"; goto normal;

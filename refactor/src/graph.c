@@ -62,7 +62,7 @@ static char* GraphExpr(FILE* fd, node_expr_t* expr)
     sprintf(name, "expr%zu", num++);
 
     char* op;
-    switch (expr->kind)
+    switch (expr->type)
     {
         case T_EXPR_ADD:     op = "+"; break;
         case T_EXPR_MINUS:   op = "-"; break;
@@ -80,7 +80,7 @@ static char* GraphExpr(FILE* fd, node_expr_t* expr)
 
     fprintf(fd, "%s [label=\"expr(%s)\",fillcolor=yellow,style=filled,fontcolor=black]\n", name, op);
 
-    if (expr->kind == T_EXPR_ATOM)
+    if (expr->type == T_EXPR_ATOM)
     {
         char* target = GraphAtom(fd, expr->leaf);
         fprintf(fd, "%s -> %s\n", name, target);

@@ -36,7 +36,7 @@ typedef struct node_expr_s
         T_EXPR_LE,
 
         T_EXPR_ATOM,
-    } kind;
+    } type;
 
     node_atom_t* leaf;
 
