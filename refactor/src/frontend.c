@@ -24,8 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/frontend.h>
 #include <arrokoth-0/lexer.h>
 #include <arrokoth-0/parser.h>
+#include <arrokoth-0/graph.h>
+
 //#include <arrokoth-0/tree_transform.h>
-//#include <arrokoth-0/ast_graph.h>
 //#include <arrokoth-0/semantic_analyzer.h>
 //#include <arrokoth-0/codegen.h>
 
@@ -54,7 +55,6 @@ int main(int argc, char** argv)
         .InputFile           = NULL,
         .OutputFile          = NULL,
         .GenerateAstGraph    = false,
-        .GenerateAstGraphNTT = false,
     };
 
     #define READ_ARG ((n+1) < argc ? argv[++n] : (arg_error(argv[n]), NULL))
@@ -66,9 +66,6 @@ int main(int argc, char** argv)
         /**/ if (!strcmp(argv[n], "-i"))    CompilerFlags.InputFile = READ_ARG;
         else if (!strcmp(argv[n], "-o"))    CompilerFlags.OutputFile = READ_ARG;
         else if (!strcmp(argv[n], "-a"))    CompilerFlags.GenerateAstGraph = true;
-        else if (!strcmp(argv[n], "-ntta"))
-            CompilerFlags.GenerateAstGraph = 
-            CompilerFlags.GenerateAstGraphNTT = true;
     }
 
     if (!CompilerFlags.InputFile)  error("No input  file specified");
@@ -83,20 +80,13 @@ int main(int argc, char** argv)
     token_t streamer = stream;
     node_program_t* root = ParseProg(&streamer);
 
-    /*
     if (CompilerFlags.GenerateAstGraph)
     {
-        if (!CompilerFlags.GenerateAstGraphNTT)
-        {
-            DoTreeTransform(AST);
-        }
-        DoSemanticAnalyzation(AST);
-        GenerateAstGraph(CompilerFlags, AST);
+        GenerateAstGraph(CompilerFlags, root);
         return 0;
     }
 
-    DoTreeTransform(AST);
-    DoSemanticAnalyzation(AST);
+    /*
     DoCodegen(CompilerFlags, AST);
     */
 

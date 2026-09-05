@@ -26,7 +26,6 @@ typedef struct compiler_params_s
     char* InputFile;
     char* OutputFile;
     bool GenerateAstGraph;
-    bool GenerateAstGraphNTT;
 }
 compiler_params_t;
 

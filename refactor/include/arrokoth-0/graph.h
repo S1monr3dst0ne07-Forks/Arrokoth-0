@@ -22,6 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <arrokoth-0/parser.h>
 #include <arrokoth-0/frontend.h>
 
-void GenerateAstGraph(compiler_params_t CompilerFlags, program_token_t* AST);
+void GenerateAstGraph(compiler_params_t CompilerFlags, node_program_t* root);
 
 #endif // ARROKOTH_AST_GRAPH_H
