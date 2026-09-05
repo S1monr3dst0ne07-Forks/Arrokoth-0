@@ -152,6 +152,12 @@ static void GenWhile(FILE* fd, node_while_t* node, node_program_t* root)
 
     fprintf(fd, "br label %%%s\n", cond_label);
     fprintf(fd, "%s:\n", done_label);
+
+    free(cond_label);
+    free(body_label);
+    free(done_label);
+
+    free(cond_result);
 }
 
 static void GenIf(FILE* fd, node_if_t* node, node_program_t* root)
@@ -168,6 +174,11 @@ static void GenIf(FILE* fd, node_if_t* node, node_program_t* root)
 
     fprintf(fd, "br label %%%s\n", false_label);
     fprintf(fd, "%s:\n", false_label);
+
+    free(true_label);
+    free(false_label);
+
+    free(cond_result);
 }
 
 
@@ -179,6 +190,7 @@ static void GenAssign(FILE* fd, node_assign_t* node, node_program_t* root)
 
     char* source = LoadExpr(fd, node->source, root);
     fprintf(fd, "store double %s, ptr @%s\n", source, node->destination);
+    free(source);
 }
 
 static void GenCall(FILE* fd, node_call_t* node, node_program_t* root)

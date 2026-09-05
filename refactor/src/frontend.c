@@ -81,7 +81,7 @@ int main(int argc, char** argv)
     if (params.graph)
         Graph(params, root);
 
-    //Codegen(params, root);
+    Codegen(params, root);
     
     FreeStream(stream);
     FreeRoot(root);
