@@ -48,7 +48,8 @@ static char* GraphAtom(FILE* fd, node_atom_t* node)
     if (node->type == T_ATOM_SUBEXPR)
     {
         char* target = GraphExpr(fd, node->expr);
-        fprintf(fd, "%s -> %s", name, target);
+        fprintf(fd, "%s -> %s\n", name, target);
+        free(target);
     }
 
     return strdup(name);
@@ -84,6 +85,7 @@ static char* GraphExpr(FILE* fd, node_expr_t* expr)
     {
         char* target = GraphAtom(fd, expr->leaf);
         fprintf(fd, "%s -> %s\n", name, target);
+        free(target);
     }
     else
     {
@@ -92,6 +94,9 @@ static char* GraphExpr(FILE* fd, node_expr_t* expr)
 
         fprintf(fd, "%s -> %s\n", name, target_left);
         fprintf(fd, "%s -> %s\n", name, target_right);
+
+        free(target_left);
+        free(target_right);
     }
 
     return strdup(name);
@@ -107,6 +112,7 @@ static char* GraphPrint(FILE* fd, node_print_t* node)
 
     char* target = GraphExpr(fd, node->target);
     fprintf(fd, "%s -> %s\n", name, target);
+    free(target);
 
     return strdup(name);
 }
@@ -142,6 +148,7 @@ static char* GraphAssign(FILE* fd, node_assign_t* node)
 
     char* target = GraphExpr(fd, node->source);
     fprintf(fd, "%s -> %s\n", name, target);
+    free(target);
 
     return strdup(name);
 }
@@ -159,6 +166,9 @@ static char* GraphWhile(FILE* fd, node_while_t* node)
     char* body_target = GraphBlock(fd, node->body);
     fprintf(fd, "%s -> %s\n", name, body_target);
 
+    free(cond_target);
+    free(body_target);
+
     return strdup(name);
 }
 
@@ -174,6 +184,9 @@ static char* GraphIf(FILE* fd, node_if_t* node)
     fprintf(fd, "%s -> %s\n", name, cond_target);
     char* body_target = GraphBlock(fd, node->body);
     fprintf(fd, "%s -> %s\n", name, body_target);
+
+    free(cond_target);
+    free(body_target);
 
     return strdup(name);
 }
@@ -197,6 +210,7 @@ static char* GraphStmt(FILE* fd, node_statement_t* stmt)
     }
 
     fprintf(fd, "%s -> %s\n", stmtName, target);
+    free(target);
 
     return strdup(stmtName);
 }
@@ -213,6 +227,7 @@ static char* GraphBlock(FILE* fd, node_block_t* block)
     {
         char* target = GraphStmt(fd, block->content[n]);
         fprintf(fd, "%s -> %s\n", blockName, target);
+        free(target);
     }
 
     return strdup(blockName);
@@ -232,6 +247,7 @@ static char* GraphProc(FILE* fd, node_proc_t* proc)
 
     char* target = GraphBlock(fd, proc->body);
     fprintf(fd, "%s -> %s\n", procName, target);
+    free(target);
 
     return strdup(procName);
 }
@@ -243,6 +259,7 @@ static void GraphProg(FILE* fd, node_program_t* root)
     {
         char* target = GraphProc(fd, root->procs[n]);
         fprintf(fd, "PROG -> %s\n", target);
+        free(target);
     }
 }
 
