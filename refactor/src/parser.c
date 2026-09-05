@@ -135,6 +135,7 @@ static node_expr_t* ParseExprMain(stream_t stream, uint32_t level)
     enum type_expr_e op = GetExprType(LexPeek(stream)->content);
     if (GetPrecedence(op) != level)
         return left;
+    LexPop(stream);
 
     node_expr_t* right = ParseExprMain(stream, level);
 
@@ -213,6 +214,8 @@ static node_statement_t* ParseStmt(stream_t stream)
         node->type    = T_STMT_ASSIGN;
     }
 
+    LexExpect(stream, ";");
+
     return node;
 }
 
@@ -274,6 +277,7 @@ node_program_t* ParseProg(stream_t stream)
                     vars[vars_count++] = LexPop(stream)->content;
                     if (LexPeek(stream)->type != TT_COMMA) LexPop(stream);
                 }
+                LexExpect(stream, ";");
             }
 
             if (!strcmp(content, "proc")) 
