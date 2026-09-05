@@ -23,196 +23,138 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <arrokoth-0/linked_list.h>
 
-enum ParserTokenType
-{
-    PROGRAM_TOKEN = 0,
-    STATEMENT_TOKEN,
-    ASSIGNMENT_TOKEN,
-    FUNCTION_TOKEN,
-    EXPRESSION,
-    BIN_OP,
-    TERM,
-    FACTOR,
-    ATOM,
-    IDENTIFIER_TOKEN,
-    NUMBER_TOKEN,
-    BLOCK_TOKEN,
-    VAR_CREATION,
-    PROC_CREATION,
-    WHILE_LOOP,
-    IF_BRANCH,
-    PRINT_VAR
-};
 
-enum BinOpType
-{
-    PLUS = 0,
-    MINUS,
-    MULT,
-    DIV,
-    EXP
-};
 
-enum CompBinOpType
+typedef struct
 {
-    EQUAL = 0,
-    NOT_EQUAL,
-    GREATER,
-    LESSER,
-    GREATER_OR_EQ,
-    LESSER_OR_EQ
-};
-
-typedef struct token_wrapper_s
-{
-    enum ParserTokenType Type;
-    void* Data;
+    enum {
+        T_ATOM_IDEN,
+        T_ATOM_NUMBER,
+        T_ATOM_SUBEXPR,
+    } type;
+    union {
+        double number;
+        char* iden;
+        void* expr; // TODO: fix type
+    };
 }
-token_wrapper_t;
+node_atom_t;
 
-typedef struct token_vector_s
+
+typedef struct node_expr_s
 {
-    size_t MaxSize;
-    size_t CurrSize;
-    token_wrapper_t* List;
+    enum {
+        T_EXPR_ADD,
+        T_EXPR_MINUS,
+        T_EXPR_MULT,
+        T_EXPR_DIV,
+        T_EXPR_EXP,
+        T_EXPR_EQUAL,
+        T_EXPR_UNEQUAL,
+        T_EXPR_GREATER,
+        T_EXPR_LESSER,
+        T_EXPR_GE,
+        T_EXPR_LE,
+
+        T_EXPR_ATOM,
+    } kind;
+
+    node_atom_t* leaf;
+
+    struct node_expr_s* left;
+    struct node_expr_s* right;
 }
-token_vector_t;
+node_expr_t;
 
-void TokenVectorInit(token_vector_t* TV);
-void TokenVectorAppend(token_vector_t* TV, token_wrapper_t TokenWrapper);
 
-// Forward declare
-struct program_token_s;
-struct statement_token_s;
-struct assignment_token_s;
-struct function_token_s;
-struct identifier_token_s;
-struct expression_token_s;
-struct bin_op_token_s;
-struct term_token_s;
-struct factor_token_s;
-struct atom_token_s;
-struct number_token_s;
-struct string_token_s;
-struct block_token_s;
-struct var_creation_token_s;
-struct proc_creation_token_s;
-struct while_loop_token_s;
-struct if_branch_token_s;
-struct print_token_s;
 
-typedef struct program_token_s
+
+
+typedef struct
 {
-    token_vector_t Blocks;
+    enum {
+        T_STMT_PROGRAM_TOKEN,
+        T_STMT_STATEMENT_TOKEN,
+        T_STMT_ASSIGNMENT_TOKEN,
+        T_STMT_FUNCTION_TOKEN,
+        T_STMT_EXPRESSION,
+        T_STMT_BIN_OP,
+        T_STMT_TERM,
+        T_STMT_FACTOR,
+        T_STMT_ATOM,
+        T_STMT_IDENTIFIER_TOKEN,
+        T_STMT_NUMBER_TOKEN,
+        T_STMT_BLOCK_TOKEN,
+        T_STMT_VAR_CREATION,
+        T_STMT_PROC_CREATION,
+        T_STMT_WHILE_LOOP,
+        T_STMT_IF_BRANCH,
+        T_STMT_PRINT_VAR
+    } type;
+    void* content;
 }
-program_token_t;
+node_statement_t;
 
-typedef struct statement_token_s
-{
-    token_wrapper_t Child;
-}
-statement_token_t;
 
-typedef struct assignment_token_s
+typedef struct
 {
-    token_wrapper_t Name;
-    token_wrapper_t Val;
+    char* destination;
+    node_expr_t* source;
 }
-assignment_token_t;
+node_assign_t;
 
-typedef struct function_token_s
+typedef struct
 {
-    token_wrapper_t FuncName;
+    char* target;
 }
-function_token_t;
+node_call_t;
 
-typedef struct identifier_token_s
-{
-    char* Text;
-}
-identifier_token_t;
 
-typedef struct expression_token_s
-{
-    token_wrapper_t Child;
-}
-expression_token_t;
 
-typedef struct bin_op_token_s
+typedef struct
 {
-    enum BinOpType Operator;
-    token_wrapper_t L;
-    token_wrapper_t R;
+    node_statement_t* content;
+    uint32_t size;
 }
-bin_op_token_t;
+node_block_t;
 
-typedef struct term_token_s
-{
-    token_wrapper_t Child;
-}
-term_token_t;
 
-typedef struct factor_token_s
-{
-    token_wrapper_t Child;
-}
-factor_token_t;
 
-typedef struct atom_token_s
+typedef struct
 {
-    token_wrapper_t Child;
+    node_expr_t* condition;
+    node_block_t* body;
 }
-atom_token_t;
-
-typedef struct number_token_s
-{
-    double Val;
-}
-number_token_t;
-
-typedef struct block_token_s
-{
-    token_wrapper_t Child;
-}
-block_token_t;
-
-typedef struct var_creation_token_s
-{
-    token_vector_t Children;
-}
-var_creation_token_t;
-
-typedef struct proc_creation_token_s
-{
-    token_wrapper_t Name;
-    token_vector_t Statements;
-}
-proc_creation_token_t;
-
-typedef struct while_loop_token_s
-{
-    enum CompBinOpType OpType;
-    token_wrapper_t L;
-    token_wrapper_t R;
-    token_vector_t Statements;
-}
-while_loop_token_t;
+node_while_t;
 
 typedef struct if_branch_token_s
 {
-    enum CompBinOpType OpType;
-    token_wrapper_t L;
-    token_wrapper_t R;
-    token_vector_t Statements;
+    node_expr_t* condition;
+    node_block_t* body;
 }
-if_branch_token_t;
+node_if_t;
 
 typedef struct print_token_s
 {
-    token_vector_t Ids;
+    node_expr_t* target;
 }
 print_token_t;
 
-program_token_t* DoParseAST(linked_list_node_t* LexTokens);
+typedef struct
+{
+    char* name;
+    node_block_t* body;
+}
+node_proc_t;
+
+typedef struct 
+{
+    char* vars[4096];
+    node_proc_t* procs;
+    uint32_t proc_count;
+}
+node_program_t;
+
+node_program_t* DoParseAST(linked_list_node_t* LexTokens);
 
 #endif // ARROKOTH_PARSER_H

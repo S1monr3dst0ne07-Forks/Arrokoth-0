@@ -49,6 +49,7 @@ typedef struct token_s
 }
 *token_t;
 
+const char* TokenTypeToStr(token_type_t tt);
 token_t DoLexicalAnalysis(FILE* fd);
 
 #endif // ARROKOTH_LEXER_H
