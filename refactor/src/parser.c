@@ -46,28 +46,28 @@ static enum type_expr_e GetExprType(char* op)
 }
 
 static uint32_t GetPrecedence(enum type_expr_e op)
-    // lower number means higher precedence.
 {
     switch (op)
     {
         default:
-        case T_EXPR_ATOM:
-            return 4;
         case T_EXPR_ADD:
         case T_EXPR_MINUS:
-            return 3;
+            return 0;
         case T_EXPR_MULT:
         case T_EXPR_DIV:
-            return 2;
-        case T_EXPR_EXP: 
             return 1;
+        case T_EXPR_EXP: 
+            return 2;
         case T_EXPR_EQUAL:   
         case T_EXPR_UNEQUAL:
         case T_EXPR_GREATER:
         case T_EXPR_LESSER:
         case T_EXPR_GE:
         case T_EXPR_LE:
-            return 0;
+            return 3;
+
+        case T_EXPR_ATOM:
+            return 4;
     }
 }
 
