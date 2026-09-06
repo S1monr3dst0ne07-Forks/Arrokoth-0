@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 4.0.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
 project(
     "Arrokoth-0"
@@ -25,17 +25,19 @@ project(
 
 set(
     ARROKOTH_SRC
-    ${CMAKE_SOURCE_DIR}/src/ast_graph.c
+    ${CMAKE_SOURCE_DIR}/src/graph.c
     ${CMAKE_SOURCE_DIR}/src/codegen.c
     ${CMAKE_SOURCE_DIR}/src/frontend.c
     ${CMAKE_SOURCE_DIR}/src/lexer.c
-    ${CMAKE_SOURCE_DIR}/src/linked_list.c
     ${CMAKE_SOURCE_DIR}/src/parser.c
-    ${CMAKE_SOURCE_DIR}/src/semantic_analyzer.c
-    ${CMAKE_SOURCE_DIR}/src/tree_transform.c
+    ${CMAKE_SOURCE_DIR}/src/ast.c
 )
 
 add_executable(arrokoth ${ARROKOTH_SRC})
 target_include_directories(arrokoth PRIVATE "${CMAKE_SOURCE_DIR}/include")
 target_compile_features(arrokoth PRIVATE c_std_17)
-target_compile_options(arrokoth PRIVATE -m64 -Wall -Wextra -g3 -ggdb3)
+target_compile_options(arrokoth PRIVATE -m64 -Wall -Wextra -g3)
+
+# target_compile_options(arrokoth PRIVATE -m64 -Wall -Wextra -g3 -ggdb3 -fsanitize=address)
+# target_link_options(arrokoth PRIVATE -fsanitize=address)
+
